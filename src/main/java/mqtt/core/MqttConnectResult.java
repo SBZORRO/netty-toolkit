@@ -1,16 +1,15 @@
-package mqtt;
+package mqtt.core;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 
-@SuppressWarnings({ "WeakerAccess", "unused" })
 public final class MqttConnectResult {
 
   private final boolean success;
   private final MqttConnectReturnCode returnCode;
   private final ChannelFuture closeFuture;
 
-  MqttConnectResult(boolean success, MqttConnectReturnCode returnCode,
+  public MqttConnectResult(boolean success, MqttConnectReturnCode returnCode,
       ChannelFuture closeFuture) {
     this.success = success;
     this.returnCode = returnCode;

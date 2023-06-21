@@ -1,4 +1,6 @@
-package mqtt;
+package mqtt.core;
+
+import java.util.concurrent.TimeUnit;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -12,15 +14,13 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.ScheduledFuture;
 
-import java.util.concurrent.TimeUnit;
-
-final class MqttPingHandler extends ChannelInboundHandlerAdapter {
+public final class MqttPingHandler extends ChannelInboundHandlerAdapter {
 
   private final int keepaliveSeconds;
 
   private ScheduledFuture<?> pingRespTimeout;
 
-  MqttPingHandler(int keepaliveSeconds) {
+  public MqttPingHandler(int keepaliveSeconds) {
     this.keepaliveSeconds = keepaliveSeconds;
   }
 
@@ -28,17 +28,25 @@ final class MqttPingHandler extends ChannelInboundHandlerAdapter {
   public void channelRead(ChannelHandlerContext ctx, Object msg)
       throws Exception {
     if (!(msg instanceof MqttMessage)) {
-      ctx.fireChannelRead(msg);
+//      ctx.fireChannelRead(msg);
+      ReferenceCountUtil.release(msg);
       return;
     }
+
     MqttMessage message = (MqttMessage) msg;
+    if (message.fixedHeader() == null
+        || message.fixedHeader().messageType() == null) {
+      ReferenceCountUtil.release(msg);
+      return;
+    }
+
     if (message.fixedHeader().messageType() == MqttMessageType.PINGREQ) {
       this.handlePingReq(ctx.channel());
-    } else if (message.fixedHeader()
-        .messageType() == MqttMessageType.PINGRESP) {
+    } else if (message.fixedHeader().messageType()
+        == MqttMessageType.PINGRESP) {
       this.handlePingResp();
     } else {
-      ctx.fireChannelRead(ReferenceCountUtil.retain(msg));
+      ctx.fireChannelRead(message);
     }
   }
 
@@ -50,11 +58,13 @@ final class MqttPingHandler extends ChannelInboundHandlerAdapter {
     if (evt instanceof IdleStateEvent) {
       IdleStateEvent event = (IdleStateEvent) evt;
       switch (event.state()) {
-      case READER_IDLE:
-        break;
-      case WRITER_IDLE:
-        this.sendPingReq(ctx.channel());
-        break;
+        case READER_IDLE:
+          break;
+        case WRITER_IDLE:
+          this.sendPingReq(ctx.channel());
+          break;
+        default:
+          break;
       }
     }
   }

@@ -1,8 +1,8 @@
-package mqtt;
+package mqtt.core;
 
 import java.util.regex.Pattern;
 
-final class MqttSubscribtion {
+public final class MqttSubscribtion {
 
   private final String topic;
   private final Pattern topicRegex;
@@ -12,7 +12,7 @@ final class MqttSubscribtion {
 
   private boolean called;
 
-  MqttSubscribtion(String topic, MqttHandler handler, boolean once) {
+  public MqttSubscribtion(String topic, MqttHandler handler, boolean once) {
     if (topic == null) {
       throw new NullPointerException("topic");
     }
@@ -22,11 +22,11 @@ final class MqttSubscribtion {
     this.topic = topic;
     this.handler = handler;
     this.once = once;
-    this.topicRegex =
-        Pattern.compile(topic.replace("+", "[^/]+").replace("#", ".+") + "$");
+    this.topicRegex = Pattern
+        .compile(topic.replace("+", "[^/]+").replace("#", ".+") + "$");
   }
 
-  String getTopic() {
+  public String getTopic() {
     return topic;
   }
 
@@ -34,15 +34,15 @@ final class MqttSubscribtion {
     return handler;
   }
 
-  boolean isOnce() {
+  public boolean isOnce() {
     return once;
   }
 
-  boolean isCalled() {
+  public boolean isCalled() {
     return called;
   }
 
-  boolean matches(String topic) {
+  public boolean matches(String topic) {
     return this.topicRegex.matcher(topic).matches();
   }
 
@@ -67,7 +67,7 @@ final class MqttSubscribtion {
     return result;
   }
 
-  void setCalled(boolean called) {
+  public void setCalled(boolean called) {
     this.called = called;
   }
 }

@@ -1,4 +1,4 @@
-package mqtt;
+package mqtt.core;
 
 import io.netty.buffer.ByteBuf;
 

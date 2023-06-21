@@ -1,29 +1,28 @@
-package mqtt;
+package mqtt.core;
 
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.mqtt.*;
 
 import java.util.function.Consumer;
 
-final class MqttIncomingQos2Publish {
+public final class MqttIncomingQos2Publish {
 
   private final MqttPublishMessage incomingPublish;
 
-  private final RetransmissionHandler<MqttMessage> retransmissionHandler =
-      new RetransmissionHandler<>();
+  private final RetransmissionHandler<MqttMessage> retransmissionHandler = new RetransmissionHandler<>();
 
-  MqttIncomingQos2Publish(MqttPublishMessage incomingPublish,
+  public MqttIncomingQos2Publish(MqttPublishMessage incomingPublish,
       MqttMessage originalMessage) {
     this.incomingPublish = incomingPublish;
 
     this.retransmissionHandler.setOriginalMessage(originalMessage);
   }
 
-  MqttPublishMessage getIncomingPublish() {
+  public MqttPublishMessage getIncomingPublish() {
     return incomingPublish;
   }
 
-  void startPubrecRetransmitTimer(
+  public void startPubrecRetransmitTimer(
       EventLoop eventLoop, Consumer<Object> sendPacket) {
     this.retransmissionHandler
         .setHandle((fixedHeader, originalMessage) -> sendPacket.accept(
@@ -31,7 +30,7 @@ final class MqttIncomingQos2Publish {
     this.retransmissionHandler.start(eventLoop);
   }
 
-  void onPubrelReceived() {
+  public void onPubrelReceived() {
     this.retransmissionHandler.stop();
   }
 }

@@ -1,4 +1,4 @@
-package mqtt;
+package mqtt.core;
 
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 final class RetransmissionHandler<T extends MqttMessage> {
-
   private ScheduledFuture<?> timer;
   private int timeout = 10;
   private BiConsumer<MqttFixedHeader, T> handler;
@@ -29,11 +28,11 @@ final class RetransmissionHandler<T extends MqttMessage> {
   private void startTimer(EventLoop eventLoop) {
     this.timer = eventLoop.schedule(() -> {
       this.timeout += 5;
-      MqttFixedHeader fixedHeader =
-          new MqttFixedHeader(this.originalMessage.fixedHeader().messageType(),
-              true, this.originalMessage.fixedHeader().qosLevel(),
-              this.originalMessage.fixedHeader().isRetain(),
-              this.originalMessage.fixedHeader().remainingLength());
+      MqttFixedHeader fixedHeader = new MqttFixedHeader(
+          this.originalMessage.fixedHeader().messageType(), true,
+          this.originalMessage.fixedHeader().qosLevel(),
+          this.originalMessage.fixedHeader().isRetain(),
+          this.originalMessage.fixedHeader().remainingLength());
       handler.accept(fixedHeader, originalMessage);
       startTimer(eventLoop);
     }, timeout, TimeUnit.SECONDS);

@@ -1,9 +1,7 @@
-package mqtt;
+package mqtt.core;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 
-@SuppressWarnings({ "WeakerAccess", "unused", "SimplifiableIfStatement",
-    "StringBufferReplaceableByString" })
 public final class MqttLastWill {
 
   private final String topic;

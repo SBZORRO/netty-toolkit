@@ -1,4 +1,4 @@
-package mqtt;
+package mqtt.core;
 
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
@@ -6,13 +6,12 @@ import io.netty.util.concurrent.Promise;
 
 import java.util.function.Consumer;
 
-final class MqttPendingUnsubscribtion {
+public final class MqttPendingUnsubscribtion {
 
   private final Promise<Void> future;
   private final String topic;
 
-  private final RetransmissionHandler<MqttUnsubscribeMessage> retransmissionHandler =
-      new RetransmissionHandler<>();
+  private final RetransmissionHandler<MqttUnsubscribeMessage> retransmissionHandler = new RetransmissionHandler<>();
 
   MqttPendingUnsubscribtion(Promise<Void> future, String topic,
       MqttUnsubscribeMessage unsubscribeMessage) {
@@ -22,11 +21,11 @@ final class MqttPendingUnsubscribtion {
     this.retransmissionHandler.setOriginalMessage(unsubscribeMessage);
   }
 
-  Promise<Void> getFuture() {
+  public Promise<Void> getFuture() {
     return future;
   }
 
-  String getTopic() {
+  public String getTopic() {
     return topic;
   }
 
@@ -39,7 +38,7 @@ final class MqttPendingUnsubscribtion {
     this.retransmissionHandler.start(eventLoop);
   }
 
-  void onUnsubackReceived() {
+  public void onUnsubackReceived() {
     this.retransmissionHandler.stop();
   }
 }

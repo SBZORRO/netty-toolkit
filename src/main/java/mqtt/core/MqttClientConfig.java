@@ -1,14 +1,11 @@
-package mqtt;
+package mqtt.core;
 
 import java.util.Random;
-
 import io.netty.channel.Channel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.mqtt.MqttVersion;
 
-@SuppressWarnings({ "WeakerAccess", "unused" })
 public final class MqttClientConfig {
-
   private final String randomClientId;
 
   private String clientId;
@@ -23,8 +20,8 @@ public final class MqttClientConfig {
   public MqttClientConfig() {
     Random random = new Random();
     String id = "netty-mqtt/";
-    String[] options =
-        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    String[] options
+        = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
             .split("");
     for (int i = 0; i < 8; i++) {
       id += options[random.nextInt(options.length)];
