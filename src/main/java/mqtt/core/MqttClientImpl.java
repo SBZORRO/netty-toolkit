@@ -59,7 +59,7 @@ public class MqttClientImpl {
   protected EventLoopGroup eventLoop;
   protected Channel channel;
   protected ChannelFuture tcpFuture;
-  protected Promise<MqttConnectResult> connectFuture;
+  protected Promise<MqttConnectResult> mqttFuture;
 
   public HashMap<String, List<MqttSubscribtion>> getTopicToSubscriptions() {
     return topicToSubscriptions;
@@ -71,10 +71,6 @@ public class MqttClientImpl {
 
   public ChannelFuture getTcpFuture() {
     return tcpFuture;
-  }
-
-  public Promise<MqttConnectResult> getConnectFuture() {
-    return connectFuture;
   }
 
   /**

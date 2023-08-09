@@ -21,17 +21,13 @@ import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
-import io.netty.util.concurrent.Promise;
 
 public final class MqttChannelHandler
     extends SimpleChannelInboundHandler<MqttMessage> {
   private final MqttClientImpl client;
-  private final Promise<MqttConnectResult> connectFuture;
 
-  public MqttChannelHandler(MqttClientImpl client,
-      Promise<MqttConnectResult> connectFuture) {
+  public MqttChannelHandler(MqttClientImpl client) {
     this.client = client;
-    this.connectFuture = connectFuture;
   }
 
   @Override
@@ -142,7 +138,7 @@ public final class MqttChannelHandler
   private void handleConack(Channel channel, MqttConnAckMessage message) {
     switch (message.variableHeader().connectReturnCode()) {
       case CONNECTION_ACCEPTED:
-        this.connectFuture.setSuccess(new MqttConnectResult(true,
+        this.client.mqttFuture.setSuccess(new MqttConnectResult(true,
             MqttConnectReturnCode.CONNECTION_ACCEPTED, channel.closeFuture()));
 
         this.client.getPendingSubscribtions().entrySet().stream()
@@ -169,7 +165,7 @@ public final class MqttChannelHandler
       case CONNECTION_REFUSED_NOT_AUTHORIZED:
       case CONNECTION_REFUSED_SERVER_UNAVAILABLE:
       case CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION:
-        this.connectFuture.setSuccess(new MqttConnectResult(false,
+        this.client.mqttFuture.setSuccess(new MqttConnectResult(false,
             message.variableHeader().connectReturnCode(),
             channel.closeFuture()));
         channel.close();
