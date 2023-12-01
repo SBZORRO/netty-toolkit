@@ -35,6 +35,10 @@ public class MyMqttClient2 {
     this.config = new MqttClientConfig();
   }
 
+  public MqttClientConfig config() {
+    return config;
+  }
+
   public Future<MqttConnectResult> connect(String host) {
     return connect(host, 1883);
   }

@@ -25,7 +25,7 @@ import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.Promise;
 import mqtt.client.MyMqttClient2;
 
-public final class MqttChannelHandler
+public final class MqttOutboundHandler
     extends SimpleChannelInboundHandler<MqttMessage> {
 
   private Promise<MqttConnectResult> connectFuture;
@@ -33,7 +33,7 @@ public final class MqttChannelHandler
   private final MyMqttClient2 client;
   private final MqttClientImpl impl;
 
-  public MqttChannelHandler(MyMqttClient2 client) {
+  public MqttOutboundHandler(MyMqttClient2 client) {
     this.client = client;
   }
 

@@ -35,6 +35,10 @@ public class TcpClient {
     return future;
   }
 
+  public ChannelFuture writeAndFlush(Object message) {
+    return channel().writeAndFlush(message);
+  }
+
   public EventLoop executer() {
     return future().channel().eventLoop().next();
   }
