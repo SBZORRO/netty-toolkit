@@ -10,13 +10,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.jerei.util.LogUtil;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
@@ -56,14 +54,10 @@ public class MqttClientImpl {
 
   private final AtomicInteger nextMessageId = new AtomicInteger(1);
 
-  public final MqttClientConfig clientConfig;
-
-  protected EventLoopGroup eventLoop;
-  protected Channel channel;
   protected ChannelFuture tcpFuture;
   protected Promise<MqttConnectResult> connectFuture;
 
-  public HashMap<String, List<MqttSubscribtion>> getTopicToSubscriptions() {
+  public Map<String, List<MqttSubscribtion>> getTopicToSubscriptions() {
     return topicToSubscriptions;
   }
 
@@ -71,29 +65,14 @@ public class MqttClientImpl {
     return nextMessageId;
   }
 
-  public ChannelFuture getTcpFuture() {
-    return tcpFuture;
-  }
-
   public Promise<MqttConnectResult> getConnectFuture() {
     return connectFuture;
   }
 
-  /**
-   * Construct the MqttClientImpl with default config
-   */
-  public MqttClientImpl() {
-    this.clientConfig = new MqttClientConfig();
-  }
+  Channel channel;
 
-  /**
-   * Construct the MqttClientImpl with additional config. This config can also be
-   * changed using the {@link #getClientConfig()} function
-   *
-   * @param clientConfig The config object to use while looking for settings
-   */
-  public MqttClientImpl(MqttClientConfig clientConfig) {
-    this.clientConfig = clientConfig;
+  public MqttClientImpl(Channel channel) {
+    this.channel = channel;
   }
 
   /**
@@ -102,22 +81,12 @@ public class MqttClientImpl {
    * @return The netty {@link EventLoopGroup} we use for the connection
    */
 
-  public EventLoopGroup getEventLoop() {
-    return eventLoop;
+  public EventLoop executer() {
+    return channel().eventLoop().next();
   }
 
-  /**
-   * By default we use the netty {@link NioEventLoopGroup}. If you change the
-   * EventLoopGroup to another type, make sure to change the {@link Channel} class
-   * using {@link MqttClientConfig#setChannelClass(Class)} If you want to force
-   * the MqttClient to use another {@link EventLoopGroup}, call this function
-   * before calling {@link #connect(String, int)}
-   *
-   * @param eventLoop The new eventloop to use
-   */
-
-  public void setEventLoop(EventLoopGroup eventLoop) {
-    this.eventLoop = eventLoop;
+  public Channel channel() {
+    return channel;
   }
 
   /**
@@ -195,7 +164,7 @@ public class MqttClientImpl {
    */
 
   public Future<Void> off(String topic, MqttHandler handler) {
-    Promise<Void> future = new DefaultPromise<>(this.eventLoop.next());
+    Promise<Void> future = new DefaultPromise<>(executer());
     for (MqttSubscribtion subscribtion : this.handlerToSubscribtion
         .get(handler)) {
       this.topicToSubscriptions.get(topic).remove(subscribtion);
@@ -215,7 +184,7 @@ public class MqttClientImpl {
    */
 
   public Future<Void> off(String topic) {
-    Promise<Void> future = new DefaultPromise<>(this.eventLoop.next());
+    Promise<Void> future = new DefaultPromise<>(executer());
     List<MqttSubscribtion> subscribtions
         = this.topicToSubscriptions.remove(topic);
     for (MqttSubscribtion subscribtion : subscribtions) {
@@ -283,7 +252,7 @@ public class MqttClientImpl {
 
   public Future<Void> publish(
       String topic, ByteBuf payload, MqttQoS qos, boolean retain) {
-    Promise<Void> future = new DefaultPromise<>(this.eventLoop.next());
+    Promise<Void> future = new DefaultPromise<>(executer());
     MqttFixedHeader fixedHeader
         = new MqttFixedHeader(MqttMessageType.PUBLISH, false, qos, retain, 0);
     MqttPublishVariableHeader variableHeader
@@ -300,33 +269,23 @@ public class MqttClientImpl {
       pendingPublish.getFuture().setSuccess(null); // We don't get an ACK for QOS 0
     } else if (pendingPublish.isSent()) {
       this.pendingPublishes.put(pendingPublish.getMessageId(), pendingPublish);
-      pendingPublish.startPublishRetransmissionTimer(this.eventLoop.next(),
+      pendingPublish.startPublishRetransmissionTimer(executer(),
           this::sendAndFlushPacket);
     }
 
     return future;
   }
 
-  /**
-   * Retrieve the MqttClient configuration
-   * 
-   * @return The {@link MqttClientConfig} instance we use
-   */
-
-  public MqttClientConfig getClientConfig() {
-    return clientConfig;
-  }
-
   /////////////////////////////// PRIVATE API ///////////////////////////////
 
   public ChannelFuture sendAndFlushPacket(Object message) {
-    if (this.channel == null) {
+    if (channel() == null) {
       return null;
     }
-    if (this.channel.isActive()) {
-      return this.channel.writeAndFlush(message);
+    if (channel().isActive()) {
+      return channel().writeAndFlush(message);
     }
-    return this.channel
+    return channel()
         .newFailedFuture(new RuntimeException("Channel is closed"));
   }
 
@@ -364,10 +323,10 @@ public class MqttClientImpl {
         li.add(subscribtion);
         this.handlerToSubscribtion.put(handler, li);
       }
-      return this.channel.newSucceededFuture();
+      return channel().newSucceededFuture();
     }
 
-    Promise<Void> future = new DefaultPromise<>(this.eventLoop.next());
+    Promise<Void> future = new DefaultPromise<>(executer());
     MqttFixedHeader fixedHeader = new MqttFixedHeader(
         MqttMessageType.SUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
     MqttTopicSubscription subscription = new MqttTopicSubscription(topic, qos);
@@ -385,7 +344,7 @@ public class MqttClientImpl {
     this.pendingSubscribeTopics.add(topic);
     pendingSubscribtion.setSent(this.sendAndFlushPacket(message) != null); // If not sent, we will send it when the connection is opened
 
-    pendingSubscribtion.startRetransmitTimer(this.eventLoop.next(),
+    pendingSubscribtion.startRetransmitTimer(executer(),
         this::sendAndFlushPacket);
 
     return future;
@@ -407,17 +366,13 @@ public class MqttClientImpl {
           = new MqttPendingUnsubscribtion(promise, topic, message);
       this.pendingServerUnsubscribes.put(variableHeader.messageId(),
           pendingUnsubscribtion);
-      pendingUnsubscribtion.startRetransmissionTimer(this.eventLoop.next(),
+      pendingUnsubscribtion.startRetransmissionTimer(executer(),
           this::sendAndFlushPacket);
 
       this.sendAndFlushPacket(message);
     } else {
       promise.setSuccess(null);
     }
-  }
-
-  public Channel getChannel() {
-    return channel;
   }
 
   public IntObjectHashMap<MqttPendingSubscribtion> getPendingSubscribtions() {
