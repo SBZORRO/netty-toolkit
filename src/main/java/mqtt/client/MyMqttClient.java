@@ -63,8 +63,7 @@ public class MyMqttClient extends MqttClientImpl {
 
   public void publish(String topic, String msg) {
 //    if (future.isSuccess()) {
-    App.EXE
-        .execute(() -> publish(topic, Unpooled.copiedBuffer(msg.getBytes())));;
+    publish(topic, Unpooled.copiedBuffer(msg.getBytes()));
 //    }
   }
 

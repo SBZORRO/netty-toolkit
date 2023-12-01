@@ -10,6 +10,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.jerei.util.LogUtil;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -59,7 +61,7 @@ public class MqttClientImpl {
   protected EventLoopGroup eventLoop;
   protected Channel channel;
   protected ChannelFuture tcpFuture;
-  protected Promise<MqttConnectResult> mqttFuture;
+  protected Promise<MqttConnectResult> connectFuture;
 
   public HashMap<String, List<MqttSubscribtion>> getTopicToSubscriptions() {
     return topicToSubscriptions;
@@ -71,6 +73,10 @@ public class MqttClientImpl {
 
   public ChannelFuture getTcpFuture() {
     return tcpFuture;
+  }
+
+  public Promise<MqttConnectResult> getConnectFuture() {
+    return connectFuture;
   }
 
   /**
@@ -126,7 +132,7 @@ public class MqttClientImpl {
    */
 
   public Future<Void> on(String topic, MqttHandler handler) {
-    return on(topic, handler, MqttQoS.AT_MOST_ONCE);
+    return on(topic, handler, MqttQoS.AT_LEAST_ONCE);
   }
 
   /**
