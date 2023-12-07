@@ -51,4 +51,8 @@ final class RetransmissionHandler<T extends MqttMessage> {
   void setOriginalMessage(T originalMessage) {
     this.originalMessage = originalMessage;
   }
+
+  T getOriginalMessage() {
+    return this.originalMessage;
+  }
 }

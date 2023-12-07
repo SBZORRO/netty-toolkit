@@ -9,7 +9,8 @@ public final class MqttIncomingQos2Publish {
 
   private final MqttPublishMessage incomingPublish;
 
-  private final RetransmissionHandler<MqttMessage> retransmissionHandler = new RetransmissionHandler<>();
+  private final RetransmissionHandler<MqttMessage> retransmissionHandler
+      = new RetransmissionHandler<>();
 
   public MqttIncomingQos2Publish(MqttPublishMessage incomingPublish,
       MqttMessage originalMessage) {
