@@ -1,6 +1,5 @@
 package mqtt.core;
 
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
@@ -22,20 +21,17 @@ final class RetransmissionHandler<T extends MqttMessage> {
     if (this.handler == null) {
       throw new NullPointerException("handler");
     }
-//    this.timeout = 10;
     this.startTimer(eventLoop);
   }
 
   private void startTimer(EventLoop eventLoop) {
     this.timer = eventLoop.scheduleWithFixedDelay(() -> {
-//      this.timeout += 5;
       MqttFixedHeader fixedHeader = new MqttFixedHeader(
           this.originalMessage.fixedHeader().messageType(), true,
           this.originalMessage.fixedHeader().qosLevel(),
           this.originalMessage.fixedHeader().isRetain(),
           this.originalMessage.fixedHeader().remainingLength());
       handler.accept(fixedHeader, originalMessage);
-//      startTimer(eventLoop);
     }, timeout, timeout << 3, TimeUnit.SECONDS);
   }
 
@@ -44,11 +40,6 @@ final class RetransmissionHandler<T extends MqttMessage> {
       this.timer.cancel(true);
     }
   }
-
-//  void stop(Map<?, ?> map) {
-//    timer.cancel(true);
-//    map.remove(this.timer);
-//  }
 
   void setHandle(BiConsumer<MqttFixedHeader, T> runnable) {
     this.handler = runnable;

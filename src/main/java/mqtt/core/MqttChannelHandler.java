@@ -193,7 +193,7 @@ public final class MqttChannelHandler
               .addListener((ChannelFutureListener) f -> {
                 this.impl.pendingQos2IncomingPublishes().put(
                     message.variableHeader().packetId(),
-                    MqttPendingPublish.newQos2IncomingPubHandler(f, message));
+                    RetransmissionHandlerFactory.newQos2IncomingPubHandler(f, message));
               });
         }
         break;
@@ -235,7 +235,7 @@ public final class MqttChannelHandler
               this.impl.pendingPubreles().put(
                   ((MqttMessageIdVariableHeader) message.variableHeader())
                       .messageId(),
-                  MqttPendingPublish.newPubrelHandler(f, message));
+                  RetransmissionHandlerFactory.newPubrelHandler(f, message));
             });
   }
 

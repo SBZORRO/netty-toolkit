@@ -7,19 +7,16 @@ import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 
-public final class MqttPendingPublish {
+public final class RetransmissionHandlerFactory {
+
+  private RetransmissionHandlerFactory() {}
 
   public static RetransmissionHandler<MqttPublishMessage> newPublishHandler(
       ChannelFuture obj, final MqttPublishMessage message) {
 
-//    MqttPendingPublish pendingPublish
-//        = new MqttPendingPublish(message);
     RetransmissionHandler<MqttPublishMessage> publishRetransmissionHandler
         = new RetransmissionHandler<>();
     publishRetransmissionHandler.setOriginalMessage(message);
-
-//      this.pendingPublishes.put(message.variableHeader().packetId(),
-//          pendingPublish);
 
     publishRetransmissionHandler
         .setHandle(
@@ -28,9 +25,6 @@ public final class MqttPendingPublish {
                     originalMessage.variableHeader(),
                     message.payload().retain())));
     publishRetransmissionHandler.start(obj.channel().eventLoop());
-
-//    pendingPublish.startPublishRetransmissionTimer(obj.channel().eventLoop(),
-//        msg -> obj.channel().writeAndFlush(msg));
 
     return publishRetransmissionHandler;
   }
@@ -61,13 +55,9 @@ public final class MqttPendingPublish {
     qos2IncomingPubHandler.setHandle(
         (fh, originalMessage) -> {
 
-//          MqttFixedHeader fixedHeader = new MqttFixedHeader(
-//              MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0);
           MqttMessageIdVariableHeader variableHeader
               = MqttMessageIdVariableHeader
                   .from(message.variableHeader().packetId());
-//          MqttMessage pubrecMessage
-//              = new MqttMessage(fixedHeader, variableHeader);
 
           obj.channel().writeAndFlush(
               new MqttMessage(fh, variableHeader));
@@ -81,14 +71,9 @@ public final class MqttPendingPublish {
   public static RetransmissionHandler<MqttUnsubscribeMessage> newUnsubscribeHandler(
       ChannelFuture obj, final MqttUnsubscribeMessage message) {
 
-//    MqttPendingUnsubscribe pendingUnsubscribe
-//        = new MqttPendingUnsubscribe(message);
     RetransmissionHandler<MqttUnsubscribeMessage> subscribeRetransmissionHandler
         = new RetransmissionHandler<>();
     subscribeRetransmissionHandler.setOriginalMessage(message);
-
-//      this.pendingUnsubscribees.put(message.variableHeader().packetId(),
-//          pendingUnsubscribe);
 
     subscribeRetransmissionHandler
         .setHandle(
@@ -98,23 +83,15 @@ public final class MqttPendingPublish {
                     message.payload())));
     subscribeRetransmissionHandler.start(obj.channel().eventLoop());
 
-//    pendingUnsubscribe.startUnsubscribeRetransmissionTimer(obj.channel().eventLoop(),
-//        msg -> obj.channel().writeAndFlush(msg));
-
     return subscribeRetransmissionHandler;
   }
 
   public static RetransmissionHandler<MqttSubscribeMessage> newSubscribeHandler(
       ChannelFuture obj, final MqttSubscribeMessage message) {
 
-//    MqttPendingSubscribe pendingSubscribe
-//        = new MqttPendingSubscribe(message);
     RetransmissionHandler<MqttSubscribeMessage> subscribeRetransmissionHandler
         = new RetransmissionHandler<>();
     subscribeRetransmissionHandler.setOriginalMessage(message);
-
-//      this.pendingSubscribees.put(message.variableHeader().packetId(),
-//          pendingSubscribe);
 
     subscribeRetransmissionHandler
         .setHandle(
@@ -124,78 +101,6 @@ public final class MqttPendingPublish {
                     message.payload())));
     subscribeRetransmissionHandler.start(obj.channel().eventLoop());
 
-//    pendingSubscribe.startSubscribeRetransmissionTimer(obj.channel().eventLoop(),
-//        msg -> obj.channel().writeAndFlush(msg));
-
     return subscribeRetransmissionHandler;
   }
-
-//  private final int messageId;
-//  private final Promise<Void> future;
-//  private final ByteBuf payload;
-//  private final MqttPublishMessage message;
-//  private final MqttQoS qos;
-//  private boolean sent = false;
-
-//  private final RetransmissionHandler<MqttPublishMessage> publishRetransmissionHandler
-//      = new RetransmissionHandler<>();
-//  private final RetransmissionHandler<MqttMessage> pubrelRetransmissionHandler
-//      = new RetransmissionHandler<>();
-
-//  MqttPendingPublish(MqttPublishMessage message) {
-//    this.message = message;
-//
-//    this.publishRetransmissionHandler.setOriginalMessage(message);
-//  }
-
-//  public Promise<Void> getFuture() {
-//    return future;
-//  }
-
-//  public boolean isSent() {
-//    return sent;
-//  }
-
-//  public void setSent(boolean sent) {
-//    this.sent = sent;
-//  }
-
-//  public MqttPublishMessage getMessage() {
-//    return message;
-//  }
-
-//  void startPublishRetransmissionTimer(
-//      EventLoop eventLoop, Consumer<Object> sendPacket) {
-//    this.publishRetransmissionHandler
-//        .setHandle(
-//            (fixedHeader, originalMessage) -> sendPacket
-//                .accept(
-//                    new MqttPublishMessage(fixedHeader,
-//                        originalMessage.variableHeader(),
-//                        this.payload.retain())));
-//    this.publishRetransmissionHandler.start(eventLoop);
-//  }
-
-//  public void onPubackReceived() {
-//    this.publishRetransmissionHandler.stop();
-//  }
-
-//  public void setPubrelMessage(MqttMessage pubrelMessage) {
-//    this.pubrelRetransmissionHandler.setOriginalMessage(pubrelMessage);
-//  }
-
-//  public void startPubrelRetransmissionTimer(
-//      EventLoop eventLoop, Consumer<Object> sendPacket) {
-//    this.pubrelRetransmissionHandler
-//        .setHandle(
-//            (fixedHeader, originalMessage) -> sendPacket
-//                .accept(
-//                    new MqttMessage(fixedHeader,
-//                        originalMessage.variableHeader())));
-//    this.pubrelRetransmissionHandler.start(eventLoop);
-//  }
-
-//  public void onPubcompReceived() {
-//    this.pubrelRetransmissionHandler.stop();
-//  }
 }
