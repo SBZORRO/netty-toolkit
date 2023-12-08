@@ -2,11 +2,11 @@ package mqtt.core;
 
 import java.util.regex.Pattern;
 
-public final class MqttSubscribtion {
+public final class BeanMqttSubscribtion {
 
   private final String topic;
   private final Pattern topicRegex;
-  private final MqttHandler handler;
+  private final IMqttHandler handler;
 
   private boolean once = false;
 
@@ -14,7 +14,7 @@ public final class MqttSubscribtion {
 
   private boolean isActive = false;
 
-  public MqttSubscribtion(String topic, MqttHandler handler, boolean once) {
+  public BeanMqttSubscribtion(String topic, IMqttHandler handler, boolean once) {
     if (topic == null) {
       throw new NullPointerException("topic");
     }
@@ -32,7 +32,7 @@ public final class MqttSubscribtion {
     return topic;
   }
 
-  public MqttHandler getHandler() {
+  public IMqttHandler getHandler() {
     return handler;
   }
 
@@ -55,7 +55,7 @@ public final class MqttSubscribtion {
     if (o == null || getClass() != o.getClass())
       return false;
 
-    MqttSubscribtion that = (MqttSubscribtion) o;
+    BeanMqttSubscribtion that = (BeanMqttSubscribtion) o;
 
     return once == that.once && topic.equals(that.topic)
         && handler.equals(that.handler);

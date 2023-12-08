@@ -8,7 +8,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.mqtt.MqttVersion;
 
-public final class MqttClientConfig {
+public final class BeanMqttClientConfig {
   private final String randomClientId;
 
   private String clientId;
@@ -17,12 +17,12 @@ public final class MqttClientConfig {
   private String username = null;
   private String password = null;
   private boolean cleanSession = false;
-  private MqttLastWill lastWill;
+  private BeanMqttLastWill lastWill;
   private Class<? extends Channel> channelClass = NioSocketChannel.class;
 
   ChannelInitializer<SocketChannel> init;
 
-  public MqttClientConfig() {
+  public BeanMqttClientConfig() {
     Random random = new Random();
     String id = "netty-mqtt/";
     String[] options
@@ -93,11 +93,11 @@ public final class MqttClientConfig {
     this.cleanSession = cleanSession;
   }
 
-  public MqttLastWill getLastWill() {
+  public BeanMqttLastWill getLastWill() {
     return lastWill;
   }
 
-  public void setLastWill(MqttLastWill lastWill) {
+  public void setLastWill(BeanMqttLastWill lastWill) {
     this.lastWill = lastWill;
   }
 

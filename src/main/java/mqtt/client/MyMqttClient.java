@@ -13,26 +13,26 @@ import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import mqtt.core.MqttChannelHandler;
-import mqtt.core.MqttClientConfig;
+import mqtt.core.BeanMqttClientConfig;
 import mqtt.core.MqttClientImpl;
-import mqtt.core.MqttHandler;
+import mqtt.core.IMqttHandler;
 import mqtt.core.MqttPingHandler;
 
 public class MyMqttClient {
   public ChannelFuture future;
 
-  private MqttClientConfig config;
+  private BeanMqttClientConfig config;
 
   MqttClientImpl impl;
   TcpClient tcpClient;
 
   public MyMqttClient() {
-    this.config = new MqttClientConfig();
+    this.config = new BeanMqttClientConfig();
     this.tcpClient = new TcpClient();
     this.impl = new MqttClientImpl(tcpClient, config);
   }
 
-  public MqttClientConfig config() {
+  public BeanMqttClientConfig config() {
     return config;
   }
 
@@ -53,7 +53,7 @@ public class MyMqttClient {
 //    }
   }
 
-  public void subscribe(String topic, MqttHandler handler) {
+  public void subscribe(String topic, IMqttHandler handler) {
     impl.on(topic, handler);
   }
 
@@ -90,7 +90,7 @@ public class MyMqttClient {
     impl.channel().pipeline().addLast(name, handler);
   }
 
-  MqttHandler handler = new MqttHandler() {
+  IMqttHandler handler = new IMqttHandler() {
     @Override
     public void onMessage(String topic, ByteBuf payload) {
       byte[] array = new byte[payload.readableBytes()];

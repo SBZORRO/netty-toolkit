@@ -46,19 +46,19 @@ public class MqttClientImpl {
 
   private final Set<String> serverSubscribtions = new HashSet<>();
 
-  private final HashMap<String, Set<MqttSubscribtion>> topicToSubscriptions
+  private final HashMap<String, Set<BeanMqttSubscribtion>> topicToSubscriptions
       = new HashMap<>();
-  private final HashMap<MqttHandler, Set<MqttSubscribtion>> handlerToSubscribtion
+  private final HashMap<IMqttHandler, Set<BeanMqttSubscribtion>> handlerToSubscribtion
       = new HashMap<>();
 
   private final AtomicInteger nextMessageId = new AtomicInteger(1);
 
-  protected Promise<MqttConnectResult> connectFuture;
+  protected Promise<BeanMqttConnectResult> connectFuture;
 
   TcpClient tcpClient;
-  MqttClientConfig config;
+  BeanMqttClientConfig config;
 
-  public MqttClientImpl(TcpClient tcpClient, MqttClientConfig config) {
+  public MqttClientImpl(TcpClient tcpClient, BeanMqttClientConfig config) {
     this.tcpClient = tcpClient;
     this.config = config;
   }
@@ -67,30 +67,30 @@ public class MqttClientImpl {
     return tcpClient.channel();
   }
 
-  public Future<Void> on(String topic, MqttHandler handler) {
+  public Future<Void> on(String topic, IMqttHandler handler) {
     return on(topic, handler, MqttQoS.AT_LEAST_ONCE);
   }
 
-  public Future<Void> on(String topic, MqttHandler handler, MqttQoS qos) {
+  public Future<Void> on(String topic, IMqttHandler handler, MqttQoS qos) {
     return createSubscribtion(topic, handler, false, qos);
   }
 
-  public Future<Void> once(String topic, MqttHandler handler) {
+  public Future<Void> once(String topic, IMqttHandler handler) {
     return once(topic, handler, MqttQoS.AT_MOST_ONCE);
   }
 
-  public Future<Void> once(String topic, MqttHandler handler, MqttQoS qos) {
+  public Future<Void> once(String topic, IMqttHandler handler, MqttQoS qos) {
     return createSubscribtion(topic, handler, true, qos);
   }
 
-  public Future<Void> off(String topic, MqttHandler handler) {
-    Set<MqttSubscribtion> topicSet = topicToSubscriptions().get(topic);
-    for (MqttSubscribtion sub : topicSet) {
+  public Future<Void> off(String topic, IMqttHandler handler) {
+    Set<BeanMqttSubscribtion> topicSet = topicToSubscriptions().get(topic);
+    for (BeanMqttSubscribtion sub : topicSet) {
       topicSet.remove(sub);
     }
 
-    Set<MqttSubscribtion> handlerSet = handlerToSubscribtion().get(handler);
-    for (MqttSubscribtion sub : handlerSet) {
+    Set<BeanMqttSubscribtion> handlerSet = handlerToSubscribtion().get(handler);
+    for (BeanMqttSubscribtion sub : handlerSet) {
       handlerSet.remove(sub);
     }
 
@@ -109,10 +109,10 @@ public class MqttClientImpl {
   public Future<Void> off(String topic) {
     this.getServerSubscribtions().remove(topic);
 
-    Set<MqttSubscribtion> subscribtions
+    Set<BeanMqttSubscribtion> subscribtions
         = this.topicToSubscriptions.remove(topic);
 
-    for (MqttSubscribtion subscribtion : subscribtions) {
+    for (BeanMqttSubscribtion subscribtion : subscribtions) {
       this.handlerToSubscribtion.get(subscribtion.getHandler())
           .remove(subscribtion);
     }
@@ -155,26 +155,26 @@ public class MqttClientImpl {
 
   // store sub directly, set active = false
   private Future<Void> createSubscribtion(
-      String topic, MqttHandler handler, boolean once, MqttQoS qos) {
+      String topic, IMqttHandler handler, boolean once, MqttQoS qos) {
 //    if (this.pendingSubscribtions.containsValue(topic)) {
 ////    pendingSubscribtions.get(topic).getTimer();
 //      return (Future<Void>) pendingSubscribtions.get(topic).getTimer();
 //    }
 
     // directly set sub
-    MqttSubscribtion subscribtion
-        = new MqttSubscribtion(topic, handler, once);
+    BeanMqttSubscribtion subscribtion
+        = new BeanMqttSubscribtion(topic, handler, once);
     if (topicToSubscriptions.containsKey(topic)) {
       topicToSubscriptions.get(topic).add(subscribtion);
     } else {
-      Set<MqttSubscribtion> li = new HashSet<>();
+      Set<BeanMqttSubscribtion> li = new HashSet<>();
       li.add(subscribtion);
       this.topicToSubscriptions.put(topic, li);
     }
     if (handlerToSubscribtion.containsKey(handler)) {
       handlerToSubscribtion.get(handler).add(subscribtion);
     } else {
-      Set<MqttSubscribtion> li = new HashSet<>();
+      Set<BeanMqttSubscribtion> li = new HashSet<>();
       li.add(subscribtion);
       this.handlerToSubscribtion.put(handler, li);
     }
@@ -218,11 +218,11 @@ public class MqttClientImpl {
         .from(this.nextMessageId.getAndIncrement());
   }
 
-  public Map<String, Set<MqttSubscribtion>> topicToSubscriptions() {
+  public Map<String, Set<BeanMqttSubscribtion>> topicToSubscriptions() {
     return topicToSubscriptions;
   }
 
-  public Map<MqttHandler, Set<MqttSubscribtion>> handlerToSubscribtion() {
+  public Map<IMqttHandler, Set<BeanMqttSubscribtion>> handlerToSubscribtion() {
     return handlerToSubscribtion;
   }
 
@@ -250,7 +250,7 @@ public class MqttClientImpl {
     return pendingQos2IncomingPublishes;
   }
 
-  public Map<String, Set<MqttSubscribtion>> getTopicToSubscriptions() {
+  public Map<String, Set<BeanMqttSubscribtion>> getTopicToSubscriptions() {
     return topicToSubscriptions;
   }
 
@@ -258,11 +258,11 @@ public class MqttClientImpl {
     return nextMessageId;
   }
 
-  public Promise<MqttConnectResult> connectFuture() {
+  public Promise<BeanMqttConnectResult> connectFuture() {
     return connectFuture;
   }
 
-  public void connectFuture(Promise<MqttConnectResult> f) {
+  public void connectFuture(Promise<BeanMqttConnectResult> f) {
     this.connectFuture = f;
   }
 

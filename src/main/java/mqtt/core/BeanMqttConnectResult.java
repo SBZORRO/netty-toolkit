@@ -3,13 +3,13 @@ package mqtt.core;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 
-public final class MqttConnectResult {
+public final class BeanMqttConnectResult {
 
   private final boolean success;
   private final MqttConnectReturnCode returnCode;
   private final ChannelFuture closeFuture;
 
-  public MqttConnectResult(boolean success, MqttConnectReturnCode returnCode,
+  public BeanMqttConnectResult(boolean success, MqttConnectReturnCode returnCode,
       ChannelFuture closeFuture) {
     this.success = success;
     this.returnCode = returnCode;

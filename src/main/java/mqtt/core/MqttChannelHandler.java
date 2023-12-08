@@ -84,12 +84,12 @@ public final class MqttChannelHandler
   }
 
   private void invokeHandlersForIncomingPublish(MqttPublishMessage message) {
-    Set<MqttSubscribtion> li = new HashSet<>();
-    for (Map.Entry<String, Set<MqttSubscribtion>> entry : this.impl
+    Set<BeanMqttSubscribtion> li = new HashSet<>();
+    for (Map.Entry<String, Set<BeanMqttSubscribtion>> entry : this.impl
         .topicToSubscriptions().entrySet()) {
       li.addAll(entry.getValue());
     }
-    for (MqttSubscribtion subscribtion : li) {
+    for (BeanMqttSubscribtion subscribtion : li) {
       if (subscribtion.matches(message.variableHeader().topicName())) {
         if (subscribtion.isOnce() && subscribtion.isCalled()) {
           continue;
@@ -121,7 +121,7 @@ public final class MqttChannelHandler
   private void handleConack(Channel channel, MqttConnAckMessage message) {
     switch (message.variableHeader().connectReturnCode()) {
       case CONNECTION_ACCEPTED:
-        impl.connectFuture().setSuccess(new MqttConnectResult(true,
+        impl.connectFuture().setSuccess(new BeanMqttConnectResult(true,
             MqttConnectReturnCode.CONNECTION_ACCEPTED, channel.closeFuture()));
         break;
 
@@ -130,7 +130,7 @@ public final class MqttChannelHandler
       case CONNECTION_REFUSED_NOT_AUTHORIZED:
       case CONNECTION_REFUSED_SERVER_UNAVAILABLE:
       case CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION:
-        impl.connectFuture().setSuccess(new MqttConnectResult(false,
+        impl.connectFuture().setSuccess(new BeanMqttConnectResult(false,
             message.variableHeader().connectReturnCode(),
             channel.closeFuture()));
         channel.close();

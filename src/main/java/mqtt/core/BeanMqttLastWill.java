@@ -2,14 +2,14 @@ package mqtt.core;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
 
-public final class MqttLastWill {
+public final class BeanMqttLastWill {
 
   private final String topic;
   private final String message;
   private final boolean retain;
   private final MqttQoS qos;
 
-  public MqttLastWill(String topic, String message, boolean retain,
+  public BeanMqttLastWill(String topic, String message, boolean retain,
       MqttQoS qos) {
     if (topic == null) {
       throw new NullPointerException("topic");
@@ -42,8 +42,8 @@ public final class MqttLastWill {
     return qos;
   }
 
-  public static MqttLastWill.Builder builder() {
-    return new MqttLastWill.Builder();
+  public static BeanMqttLastWill.Builder builder() {
+    return new BeanMqttLastWill.Builder();
   }
 
   public static final class Builder {
@@ -98,8 +98,8 @@ public final class MqttLastWill {
       return this;
     }
 
-    public MqttLastWill build() {
-      return new MqttLastWill(topic, message, retain, qos);
+    public BeanMqttLastWill build() {
+      return new BeanMqttLastWill(topic, message, retain, qos);
     }
   }
 
@@ -110,7 +110,7 @@ public final class MqttLastWill {
     if (o == null || getClass() != o.getClass())
       return false;
 
-    MqttLastWill that = (MqttLastWill) o;
+    BeanMqttLastWill that = (BeanMqttLastWill) o;
 
     if (retain != that.retain)
       return false;
