@@ -1,8 +1,9 @@
 package mqtt.core;
 
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -19,21 +20,19 @@ import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
+import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttTopicSubscription;
 import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
+import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.util.concurrent.DefaultPromise;
-import io.netty.util.concurrent.Promise;
-import mqtt.client.MyMqttClient2;
 
 public final class MqttChannelHandler
     extends SimpleChannelInboundHandler<MqttMessage> {
 
-  private Promise<MqttConnectResult> connectFuture;
-
-  private final MyMqttClient2 client;
   private final MqttClientImpl impl;
 
-  public MqttChannelHandler(MyMqttClient2 client) {
-    this.client = client;
+  public MqttChannelHandler(MqttClientImpl impl) {
+    this.impl = impl;
   }
 
   @Override
@@ -75,43 +74,19 @@ public final class MqttChannelHandler
 
     MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNECT,
         false, MqttQoS.AT_MOST_ONCE, false, 0);
-//    MqttConnectVariableHeader variableHeader = new MqttConnectVariableHeader(
-//        this.client.getClientConfig().getProtocolVersion().protocolName(),  // Protocol Name
-//        this.client.getClientConfig().getProtocolVersion().protocolLevel(), // Protocol Level
-//        this.client.getClientConfig().getUsername() != null,                // Has Username
-//        this.client.getClientConfig().getPassword() != null,                // Has Password
-//        this.client.getClientConfig().getLastWill() != null                 // Will Retain
-//            && this.client.getClientConfig().getLastWill().isRetain(),
-//        this.client.getClientConfig().getLastWill() != null                 // Will QOS
-//            ? this.client.getClientConfig().getLastWill().getQos().value()
-//            : 0,
-//        this.client.getClientConfig().getLastWill() != null,                // Has Will
-//        this.client.getClientConfig().isCleanSession(),                     // Clean Session
-//        this.client.getClientConfig().getTimeoutSeconds()                   // Timeout
-//    );
-//    MqttConnectPayload payload
-//        = new MqttConnectPayload(this.client.getClientConfig().getClientId(),
-//            this.client.getClientConfig().getLastWill() != null
-//                ? this.client.getClientConfig().getLastWill().getTopic()
-//                : null,
-//            this.client.getClientConfig().getLastWill() != null
-//                ? this.client.getClientConfig().getLastWill().getMessage()
-//                    .getBytes()
-//                : new byte[0],
-//            this.client.getClientConfig().getUsername(),
-//            this.client.getClientConfig().getPassword() != null
-//                ? this.client.getClientConfig().getPassword().getBytes()
-//                : new byte[0]);
+
     ctx.channel().writeAndFlush(
         new MqttConnectMessage(fixedHeader,
-            client.config().mqttConnectVariableHeader(),
-            client.config().mqttConnectPayload()));
+            impl.mqttConnectVariableHeader(),
+            impl.mqttConnectPayload()))
+        .addListener((ChannelFutureListener) f -> impl
+            .connectFuture(new DefaultPromise<>(f.channel().eventLoop())));
   }
 
   private void invokeHandlersForIncomingPublish(MqttPublishMessage message) {
-    List<MqttSubscribtion> li = new LinkedList<>();
-    for (Map.Entry<String, List<MqttSubscribtion>> entry : this.impl
-        .getSubscriptions().entrySet()) {
+    Set<MqttSubscribtion> li = new HashSet<>();
+    for (Map.Entry<String, Set<MqttSubscribtion>> entry : this.impl
+        .topicToSubscriptions().entrySet()) {
       li.addAll(entry.getValue());
     }
     for (MqttSubscribtion subscribtion : li) {
@@ -146,28 +121,8 @@ public final class MqttChannelHandler
   private void handleConack(Channel channel, MqttConnAckMessage message) {
     switch (message.variableHeader().connectReturnCode()) {
       case CONNECTION_ACCEPTED:
-        this.connectFuture = new DefaultPromise<>(channel.eventLoop());
-        this.connectFuture.setSuccess(new MqttConnectResult(true,
+        impl.connectFuture().setSuccess(new MqttConnectResult(true,
             MqttConnectReturnCode.CONNECTION_ACCEPTED, channel.closeFuture()));
-
-        this.impl.getPendingSubscribtions().entrySet().stream()
-            .filter((e) -> !e.getValue().isSent()).forEach((e) -> {
-              channel.write(e.getValue().getSubscribeMessage());
-              e.getValue().setSent(true);
-            });
-
-        this.impl.getPendingPublishes().forEach((id, publish) -> {
-          if (publish.isSent()) {
-            return;
-          }
-          channel.write(publish.getMessage());
-          publish.setSent(true);
-          if (publish.getQos() == MqttQoS.AT_MOST_ONCE) {
-            publish.getFuture().setSuccess(null); // We don't get an ACK for QOS 0
-            this.impl.getPendingPublishes().remove(publish.getMessageId());
-          }
-        });
-        channel.flush();
         break;
 
       case CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD:
@@ -175,7 +130,7 @@ public final class MqttChannelHandler
       case CONNECTION_REFUSED_NOT_AUTHORIZED:
       case CONNECTION_REFUSED_SERVER_UNAVAILABLE:
       case CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION:
-        this.connectFuture.setSuccess(new MqttConnectResult(false,
+        impl.connectFuture().setSuccess(new MqttConnectResult(false,
             message.variableHeader().connectReturnCode(),
             channel.closeFuture()));
         channel.close();
@@ -187,44 +142,19 @@ public final class MqttChannelHandler
   }
 
   private void handleSubAck(MqttSubAckMessage message) {
-    MqttPendingSubscribtion pendingSubscribtion = this.impl
-        .getPendingSubscribtions().get(message.variableHeader().messageId());
-    if (pendingSubscribtion == null) {
-      return;
+    RetransmissionHandler<MqttSubscribeMessage> pendingSubscribtions
+        = this.impl.pendingSubscribtions()
+            .get(message.variableHeader().messageId());
+
+    this.impl.pendingSubscribtions()
+        .remove(message.variableHeader().messageId());
+    pendingSubscribtions.stop();
+    List<MqttTopicSubscription> li = pendingSubscribtions.getOriginalMessage()
+        .payload().topicSubscriptions();
+
+    for (MqttTopicSubscription topic : li) {
+      this.impl.getServerSubscribtions().add(topic.topicName());
     }
-    pendingSubscribtion.onSubackReceived();
-    for (MqttPendingSubscribtion.MqttPendingHandler handler : pendingSubscribtion
-        .getHandlers()) {
-      MqttSubscribtion subscribtion
-          = new MqttSubscribtion(pendingSubscribtion.getTopic(),
-              handler.getHandler(), handler.isOnce());
-      if (this.impl.getSubscriptions()
-          .containsKey(pendingSubscribtion.getTopic())) {
-        this.impl.getSubscriptions().get(pendingSubscribtion.getTopic())
-            .add(subscribtion);
-
-      } else {
-        List<MqttSubscribtion> li = new LinkedList<>();
-        li.add(subscribtion);
-        this.impl.getSubscriptions().put(pendingSubscribtion.getTopic(), li);
-      }
-
-      if (this.impl.getHandlerToSubscribtion()
-          .containsKey(handler.getHandler())) {
-        this.impl.getHandlerToSubscribtion().get(handler.getHandler())
-            .add(subscribtion);
-      } else {
-        List<MqttSubscribtion> li = new LinkedList<>();
-        li.add(subscribtion);
-        this.impl.getHandlerToSubscribtion().put(handler.getHandler(), li);
-      }
-
-    }
-    this.impl.getPendingSubscribeTopics()
-        .remove(pendingSubscribtion.getTopic());
-
-    this.impl.getServerSubscribtions().add(pendingSubscribtion.getTopic());
-    pendingSubscribtion.getFuture().setSuccess(null);
   }
 
   private void handlePublish(Channel channel, MqttPublishMessage message) {
@@ -257,17 +187,7 @@ public final class MqttChannelHandler
           MqttMessage pubrecMessage
               = new MqttMessage(fixedHeader, variableHeader);
 
-//          MqttIncomingQos2Publish incomingQos2Publish
-//              = new MqttIncomingQos2Publish(message, pubrecMessage);
-
-//          this.impl.getQos2PendingIncomingPublishes()
-//              .put(message.variableHeader().packetId(), incomingQos2Publish);
-
           message.payload().retain();
-
-//          incomingQos2Publish.startPubrecRetransmitTimer(
-//              channel.eventLoop().next(),
-//              this.impl::sendAndFlushPacket);
 
           channel.writeAndFlush(pubrecMessage)
               .addListener((ChannelFutureListener) f -> {
@@ -283,17 +203,13 @@ public final class MqttChannelHandler
   }
 
   private void handleUnsuback(MqttUnsubAckMessage message) {
-    MqttPendingUnsubscribtion unsubscribtion
-        = this.impl.getPendingServerUnsubscribes()
+    RetransmissionHandler<MqttUnsubscribeMessage> pendingServerUnsubscribes
+        = this.impl.pendingServerUnsubscribes()
             .get(message.variableHeader().messageId());
-    if (unsubscribtion == null) {
-      return;
-    }
-    unsubscribtion.onUnsubackReceived();
-    this.impl.getServerSubscribtions().remove(unsubscribtion.getTopic());
-    unsubscribtion.getFuture().setSuccess(null);
-    this.impl.getPendingServerUnsubscribes()
+
+    this.impl.pendingServerUnsubscribes()
         .remove(message.variableHeader().messageId());
+    pendingServerUnsubscribes.stop();
   }
 
   // qos 1
@@ -304,11 +220,9 @@ public final class MqttChannelHandler
 
   // qos 2 part 1
   private void handlePubrec(Channel channel, MqttMessage message) {
-//    MqttPendingPublish pendingPublish = 
     this.impl.getPendingPublishes().remove(
         ((MqttMessageIdVariableHeader) message.variableHeader()).messageId())
         .stop();
-//    pendingPublish.onPubackReceived();
 
     MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL,
         false, MqttQoS.AT_LEAST_ONCE, false, 0);
@@ -323,29 +237,10 @@ public final class MqttChannelHandler
                       .messageId(),
                   MqttPendingPublish.newPubrelHandler(f, message));
             });
-
-//    pendingPublish.setPubrelMessage(pubrelMessage);
-//    pendingPublish.startPubrelRetransmissionTimer(
-//        channel.eventLoop().next(), this.impl::sendAndFlushPacket);
-
   }
 
   // qos 2 part 2
   private void handlePubrel(Channel channel, MqttMessage message) {
-//    if (this.impl.getQos2PendingIncomingPublishes()
-//        .containsKey(((MqttMessageIdVariableHeader) message.variableHeader())
-//            .messageId())) {
-//      MqttIncomingQos2Publish incomingQos2Publish
-//          = this.impl.getQos2PendingIncomingPublishes()
-//              .get(((MqttMessageIdVariableHeader) message.variableHeader())
-//                  .messageId());
-//      this.invokeHandlersForIncomingPublish(
-//          incomingQos2Publish.getIncomingPublish());
-//      incomingQos2Publish.onPubrelReceived();
-//      this.impl.getQos2PendingIncomingPublishes().remove(incomingQos2Publish
-//          .getIncomingPublish().variableHeader().packetId());
-//    }
-
     if (this.impl.pendingQos2IncomingPublishes()
         .containsKey(((MqttMessageIdVariableHeader) message.variableHeader())
             .messageId())) {
@@ -371,11 +266,6 @@ public final class MqttChannelHandler
   private void handlePubcomp(MqttMessage message) {
     MqttMessageIdVariableHeader variableHeader
         = (MqttMessageIdVariableHeader) message.variableHeader();
-//    MqttPendingPublish pendingPublish
-//        = this.impl.getPendingPublishes().get(variableHeader.messageId());
-//    pendingPublish.getFuture().setSuccess(null);
     this.impl.getPendingPublishes().remove(variableHeader.messageId()).stop();
-//    pendingPublish.getPayload().release();
-//    pendingPublish.onPubcompReceived();
   }
 }

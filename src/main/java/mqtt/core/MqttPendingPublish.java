@@ -1,12 +1,11 @@
 package mqtt.core;
 
 import io.netty.channel.ChannelFuture;
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
-import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 
 public final class MqttPendingPublish {
 
@@ -78,6 +77,59 @@ public final class MqttPendingPublish {
 
     return qos2IncomingPubHandler;
   }
+
+  public static RetransmissionHandler<MqttUnsubscribeMessage> newUnsubscribeHandler(
+      ChannelFuture obj, final MqttUnsubscribeMessage message) {
+
+//    MqttPendingUnsubscribe pendingUnsubscribe
+//        = new MqttPendingUnsubscribe(message);
+    RetransmissionHandler<MqttUnsubscribeMessage> subscribeRetransmissionHandler
+        = new RetransmissionHandler<>();
+    subscribeRetransmissionHandler.setOriginalMessage(message);
+
+//      this.pendingUnsubscribees.put(message.variableHeader().packetId(),
+//          pendingUnsubscribe);
+
+    subscribeRetransmissionHandler
+        .setHandle(
+            (fixedHeader, originalMessage) -> obj.channel().writeAndFlush(
+                new MqttUnsubscribeMessage(fixedHeader,
+                    originalMessage.variableHeader(),
+                    message.payload())));
+    subscribeRetransmissionHandler.start(obj.channel().eventLoop());
+
+//    pendingUnsubscribe.startUnsubscribeRetransmissionTimer(obj.channel().eventLoop(),
+//        msg -> obj.channel().writeAndFlush(msg));
+
+    return subscribeRetransmissionHandler;
+  }
+
+  public static RetransmissionHandler<MqttSubscribeMessage> newSubscribeHandler(
+      ChannelFuture obj, final MqttSubscribeMessage message) {
+
+//    MqttPendingSubscribe pendingSubscribe
+//        = new MqttPendingSubscribe(message);
+    RetransmissionHandler<MqttSubscribeMessage> subscribeRetransmissionHandler
+        = new RetransmissionHandler<>();
+    subscribeRetransmissionHandler.setOriginalMessage(message);
+
+//      this.pendingSubscribees.put(message.variableHeader().packetId(),
+//          pendingSubscribe);
+
+    subscribeRetransmissionHandler
+        .setHandle(
+            (fixedHeader, originalMessage) -> obj.channel().writeAndFlush(
+                new MqttSubscribeMessage(fixedHeader,
+                    originalMessage.variableHeader(),
+                    message.payload())));
+    subscribeRetransmissionHandler.start(obj.channel().eventLoop());
+
+//    pendingSubscribe.startSubscribeRetransmissionTimer(obj.channel().eventLoop(),
+//        msg -> obj.channel().writeAndFlush(msg));
+
+    return subscribeRetransmissionHandler;
+  }
+
 //  private final int messageId;
 //  private final Promise<Void> future;
 //  private final ByteBuf payload;

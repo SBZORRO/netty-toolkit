@@ -8,9 +8,11 @@ public final class MqttSubscribtion {
   private final Pattern topicRegex;
   private final MqttHandler handler;
 
-  private final boolean once;
+  private boolean once = false;
 
-  private boolean called;
+  private boolean called = false;
+
+  private boolean isActive = false;
 
   public MqttSubscribtion(String topic, MqttHandler handler, boolean once) {
     if (topic == null) {
@@ -69,5 +71,13 @@ public final class MqttSubscribtion {
 
   public void setCalled(boolean called) {
     this.called = called;
+  }
+
+  public boolean isActive() {
+    return isActive;
+  }
+
+  public void setActive(boolean isActive) {
+    this.isActive = isActive;
   }
 }

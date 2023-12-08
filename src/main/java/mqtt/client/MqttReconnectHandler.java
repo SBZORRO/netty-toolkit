@@ -4,8 +4,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 
 import com.jerei.App;
-import com.jerei.tcp.TcpClient;
-import com.jerei.util.LogUtil;
+import com.jerei.LogUtil;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;

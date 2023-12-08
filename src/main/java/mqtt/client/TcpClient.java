@@ -16,8 +16,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 public class TcpClient {
-  public static final Map<String, ChannelFuture> map
-      = new ConcurrentHashMap<String, ChannelFuture>();
+  public static final Map<String, TcpClient> map = new ConcurrentHashMap<>();
 
   public ChannelFuture connect(String host, int port) {
     remoteAddress(host, port);

@@ -2,73 +2,59 @@ package mqtt.client;
 
 import java.util.concurrent.LinkedBlockingDeque;
 
-import com.jerei.App;
-
-import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.concurrent.DefaultPromise;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.Promise;
 import mqtt.core.MqttChannelHandler;
 import mqtt.core.MqttClientConfig;
 import mqtt.core.MqttClientImpl;
-import mqtt.core.MqttConnectResult;
 import mqtt.core.MqttHandler;
 import mqtt.core.MqttPingHandler;
 
-public class MyMqttClient extends MqttClientImpl {
-  public Future<MqttConnectResult> future;
+public class MyMqttClient {
+  public ChannelFuture future;
 
   private MqttClientConfig config;
 
-  public MyMqttClient(MqttClientConfig config) {
-    this.config = config;
-  }
+  MqttClientImpl impl;
+  TcpClient tcpClient;
 
   public MyMqttClient() {
     this.config = new MqttClientConfig();
+    this.tcpClient = new TcpClient();
+    this.impl = new MqttClientImpl(tcpClient, config);
   }
 
-  public Future<MqttConnectResult> connect(String host) {
+  public MqttClientConfig config() {
+    return config;
+  }
+
+  public ChannelFuture connect(String host) {
     return connect(host, 1883);
   }
 
-  public Future<MqttConnectResult> connect(String host, int port) {
-    if (this.eventLoop == null) {
-      this.eventLoop = new NioEventLoopGroup(1);
-    }
-    Bootstrap bootstrap = new Bootstrap();
-    bootstrap.group(this.eventLoop);
-    bootstrap.channel(clientConfig.getChannelClass());
-    bootstrap.remoteAddress(host, port);
-    bootstrap.handler(new MqttChannelInitializer());
-    tcpFuture = bootstrap.connect();
-    tcpFuture.addListener(new MqttConnectionListener());
-    tcpFuture.addListener(
-        (ChannelFutureListener) f -> MyMqttClient.this.channel = f.channel());
-
-    connectFuture = new DefaultPromise<>(this.eventLoop.next());
-    return connectFuture;
+  public ChannelFuture connect(String host, int port) {
+    tcpClient.init(new MqttChannelInitializer());
+    tcpClient.listeners(new MqttConnectionListener());
+    future = tcpClient.connect(host, port);
+    return future;
   }
 
   public void publish(String topic, String msg) {
 //    if (future.isSuccess()) {
-    publish(topic, Unpooled.copiedBuffer(msg.getBytes()));
+    impl.publish(topic, Unpooled.copiedBuffer(msg.getBytes()));
 //    }
   }
 
   public void subscribe(String topic, MqttHandler handler) {
-    on(topic, handler);
+    impl.on(topic, handler);
   }
 
   private class MqttChannelInitializer
@@ -80,12 +66,12 @@ public class MyMqttClient extends MqttClientImpl {
       ch.pipeline().addLast("mqttEncoder", MqttEncoder.INSTANCE);
       ch.pipeline().addLast("idleStateHandler",
           new IdleStateHandler(
-              MyMqttClient.this.clientConfig.getTimeoutSeconds(),
-              MyMqttClient.this.clientConfig.getTimeoutSeconds(), 0));
+              MyMqttClient.this.config.getTimeoutSeconds(),
+              MyMqttClient.this.config.getTimeoutSeconds(), 0));
       ch.pipeline().addLast("mqttPingHandler", new MqttPingHandler(
-          MyMqttClient.this.clientConfig.getTimeoutSeconds()));
+          MyMqttClient.this.config.getTimeoutSeconds()));
       ch.pipeline().addLast("mqttHandler",
-          new MqttChannelHandler(MyMqttClient.this));
+          new MqttChannelHandler(MyMqttClient.this.impl));
     }
   }
 
@@ -93,7 +79,7 @@ public class MyMqttClient extends MqttClientImpl {
       = new LinkedBlockingDeque<>();
 
   public void subscribe(String topic) {
-    on(topic, (t, payload) -> {
+    impl.on(topic, (t, payload) -> {
       byte[] array = new byte[payload.readableBytes()];
       payload.getBytes(0, array);
       messageQueue.addLast(new Object[] { t, new String(array) });
@@ -101,7 +87,7 @@ public class MyMqttClient extends MqttClientImpl {
   }
 
   public void addHandler(String name, ChannelHandler handler) {
-    tcpFuture.channel().pipeline().addLast(name, handler);
+    impl.channel().pipeline().addLast(name, handler);
   }
 
   MqttHandler handler = new MqttHandler() {

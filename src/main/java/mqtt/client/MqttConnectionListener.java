@@ -4,7 +4,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 
 import com.jerei.App;
-import com.jerei.util.LogUtil;
+import com.jerei.LogUtil;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
