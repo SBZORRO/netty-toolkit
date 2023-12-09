@@ -1,4 +1,4 @@
-package com.jerei;
+package com.sbzorro;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

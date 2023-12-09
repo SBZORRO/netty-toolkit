@@ -3,7 +3,7 @@ package mqtt.client;
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 
-import com.jerei.LogUtil;
+import com.sbzorro.LogUtil;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;

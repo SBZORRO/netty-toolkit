@@ -1,4 +1,4 @@
-package com.jerei;
+package com.sbzorro;
 
 import java.io.UnsupportedEncodingException;
 

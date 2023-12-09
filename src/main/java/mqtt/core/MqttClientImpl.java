@@ -32,24 +32,17 @@ import mqtt.client.TcpClient;
 
 public class MqttClientImpl {
 
-  private final IntObjectHashMap<RetransmissionHandler<MqttPublishMessage>> pendingQos2IncomingPublishes
-      = new IntObjectHashMap<>();
-  private final IntObjectHashMap<RetransmissionHandler<MqttPublishMessage>> pendingPublishes
-      = new IntObjectHashMap<>();
-  private final IntObjectHashMap<RetransmissionHandler<MqttMessage>> pendingPubreles
-      = new IntObjectHashMap<>();
+  private final IntObjectHashMap<RetransmissionHandler<MqttPublishMessage>> pendingQos2IncomingPublishes = new IntObjectHashMap<>();
+  private final IntObjectHashMap<RetransmissionHandler<MqttPublishMessage>> pendingPublishes = new IntObjectHashMap<>();
+  private final IntObjectHashMap<RetransmissionHandler<MqttMessage>> pendingPubreles = new IntObjectHashMap<>();
 
-  private final IntObjectHashMap<RetransmissionHandler<MqttUnsubscribeMessage>> pendingServerUnsubscribes
-      = new IntObjectHashMap<>();
-  private final IntObjectHashMap<RetransmissionHandler<MqttSubscribeMessage>> pendingSubscribtions
-      = new IntObjectHashMap<>();
+  private final IntObjectHashMap<RetransmissionHandler<MqttUnsubscribeMessage>> pendingServerUnsubscribes = new IntObjectHashMap<>();
+  private final IntObjectHashMap<RetransmissionHandler<MqttSubscribeMessage>> pendingSubscribtions = new IntObjectHashMap<>();
 
   private final Set<String> serverSubscribtions = new HashSet<>();
 
-  private final HashMap<String, Set<BeanMqttSubscribtion>> topicToSubscriptions
-      = new HashMap<>();
-  private final HashMap<IMqttHandler, Set<BeanMqttSubscribtion>> handlerToSubscribtion
-      = new HashMap<>();
+  private final HashMap<String, Set<BeanMqttSubscribtion>> topicToSubscriptions = new HashMap<>();
+  private final HashMap<IMqttHandler, Set<BeanMqttSubscribtion>> handlerToSubscribtion = new HashMap<>();
 
   private final AtomicInteger nextMessageId = new AtomicInteger(1);
 
@@ -89,7 +82,8 @@ public class MqttClientImpl {
       topicSet.remove(sub);
     }
 
-    Set<BeanMqttSubscribtion> handlerSet = handlerToSubscribtion().get(handler);
+    Set<BeanMqttSubscribtion> handlerSet = handlerToSubscribtion()
+        .get(handler);
     for (BeanMqttSubscribtion sub : handlerSet) {
       handlerSet.remove(sub);
     }
@@ -109,8 +103,8 @@ public class MqttClientImpl {
   public Future<Void> off(String topic) {
     this.getServerSubscribtions().remove(topic);
 
-    Set<BeanMqttSubscribtion> subscribtions
-        = this.topicToSubscriptions.remove(topic);
+    Set<BeanMqttSubscribtion> subscribtions = this.topicToSubscriptions
+        .remove(topic);
 
     for (BeanMqttSubscribtion subscribtion : subscribtions) {
       this.handlerToSubscribtion.get(subscribtion.getHandler())
@@ -134,13 +128,12 @@ public class MqttClientImpl {
 
   public Future<Void> publish(
       String topic, ByteBuf payload, MqttQoS qos, boolean retain) {
-    MqttFixedHeader fixedHeader
-        = new MqttFixedHeader(MqttMessageType.PUBLISH, false, qos, retain, 0);
-    MqttPublishVariableHeader variableHeader
-        = new MqttPublishVariableHeader(topic,
-            qos.value() > 0 ? getNewMessageId().messageId() : 0);
-    MqttPublishMessage message
-        = new MqttPublishMessage(fixedHeader, variableHeader, payload);
+    MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH,
+        false, qos, retain, 0);
+    MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(
+        topic, qos.value() > 0 ? getNewMessageId().messageId() : 0);
+    MqttPublishMessage message = new MqttPublishMessage(fixedHeader,
+        variableHeader, payload);
 
     if (qos == MqttQoS.AT_MOST_ONCE) {
       return this.tcpClient.writeAndFlush(message);
@@ -162,8 +155,8 @@ public class MqttClientImpl {
 //    }
 
     // directly set sub
-    BeanMqttSubscribtion subscribtion
-        = new BeanMqttSubscribtion(topic, handler, once);
+    BeanMqttSubscribtion subscribtion = new BeanMqttSubscribtion(topic,
+        handler, once);
     if (topicToSubscriptions.containsKey(topic)) {
       topicToSubscriptions.get(topic).add(subscribtion);
     } else {
@@ -181,13 +174,12 @@ public class MqttClientImpl {
 
     MqttFixedHeader fixedHeader = new MqttFixedHeader(
         MqttMessageType.SUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
-    MqttTopicSubscription subscription
-        = new MqttTopicSubscription(topic, qos);
+    MqttTopicSubscription subscription = new MqttTopicSubscription(topic, qos);
     MqttMessageIdVariableHeader variableHeader = getNewMessageId();
-    MqttSubscribePayload payload
-        = new MqttSubscribePayload(Collections.singletonList(subscription));
-    MqttSubscribeMessage message
-        = new MqttSubscribeMessage(fixedHeader, variableHeader, payload);
+    MqttSubscribePayload payload = new MqttSubscribePayload(
+        Collections.singletonList(subscription));
+    MqttSubscribeMessage message = new MqttSubscribeMessage(fixedHeader,
+        variableHeader, payload);
 
     return this.tcpClient.writeAndFlush(message)
         .addListener((ChannelFutureListener) f -> {
@@ -200,10 +192,10 @@ public class MqttClientImpl {
     MqttFixedHeader fixedHeader = new MqttFixedHeader(
         MqttMessageType.UNSUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
     MqttMessageIdVariableHeader variableHeader = getNewMessageId();
-    MqttUnsubscribePayload payload
-        = new MqttUnsubscribePayload(Collections.singletonList(topic));
-    MqttUnsubscribeMessage message
-        = new MqttUnsubscribeMessage(fixedHeader, variableHeader, payload);
+    MqttUnsubscribePayload payload = new MqttUnsubscribePayload(
+        Collections.singletonList(topic));
+    MqttUnsubscribeMessage message = new MqttUnsubscribeMessage(fixedHeader,
+        variableHeader, payload);
 
     return this.tcpClient.writeAndFlush(message)
         .addListener((ChannelFutureListener) f -> {
@@ -230,23 +222,28 @@ public class MqttClientImpl {
     return serverSubscribtions;
   }
 
-  public IntObjectHashMap<RetransmissionHandler<MqttUnsubscribeMessage>> pendingServerUnsubscribes() {
+  public IntObjectHashMap<RetransmissionHandler<MqttUnsubscribeMessage>>
+      pendingServerUnsubscribes() {
     return pendingServerUnsubscribes;
   }
 
-  public IntObjectHashMap<RetransmissionHandler<MqttSubscribeMessage>> pendingSubscribtions() {
+  public IntObjectHashMap<RetransmissionHandler<MqttSubscribeMessage>>
+      pendingSubscribtions() {
     return pendingSubscribtions;
   }
 
-  public IntObjectHashMap<RetransmissionHandler<MqttPublishMessage>> getPendingPublishes() {
+  public IntObjectHashMap<RetransmissionHandler<MqttPublishMessage>>
+      getPendingPublishes() {
     return pendingPublishes;
   }
 
-  public IntObjectHashMap<RetransmissionHandler<MqttMessage>> pendingPubreles() {
+  public IntObjectHashMap<RetransmissionHandler<MqttMessage>>
+      pendingPubreles() {
     return pendingPubreles;
   }
 
-  public IntObjectHashMap<RetransmissionHandler<MqttPublishMessage>> pendingQos2IncomingPublishes() {
+  public IntObjectHashMap<RetransmissionHandler<MqttPublishMessage>>
+      pendingQos2IncomingPublishes() {
     return pendingQos2IncomingPublishes;
   }
 
@@ -291,7 +288,8 @@ public class MqttClientImpl {
             ? config.getLastWill().getMessage().getBytes()
             : new byte[0],
         config.getUsername(),
-        config.getPassword() != null ? config.getPassword().getBytes()
+        config.getPassword() != null
+            ? config.getPassword().getBytes()
             : new byte[0]);
   }
 }

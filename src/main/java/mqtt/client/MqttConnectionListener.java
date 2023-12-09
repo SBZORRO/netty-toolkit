@@ -3,8 +3,8 @@ package mqtt.client;
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 
-import com.jerei.App;
-import com.jerei.LogUtil;
+import com.sbzorro.App;
+import com.sbzorro.LogUtil;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
