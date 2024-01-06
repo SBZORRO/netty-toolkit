@@ -1,9 +1,12 @@
-package mqtt.client;
+package tcp.client;
 
+import java.io.Closeable;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.sbzorro.LogUtil;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -15,7 +18,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-public class TcpClient {
+public class TcpClient implements Closeable {
   public static final Map<String, TcpClient> map = new ConcurrentHashMap<>();
 
   public ChannelFuture connect(String host, int port) {
@@ -120,4 +123,17 @@ public class TcpClient {
     this.init = init;
   }
 
+  @Override
+  public void close() {
+//    try {
+////      future().channel().closeFuture().sync();
+//    } catch (InterruptedException e) {
+//      // TODO Auto-generated catch block
+//      e.printStackTrace();
+//    } finally {
+    eventLoopGroup().shutdownGracefully();
+//    bossGroup.shutdownGracefully();
+    LogUtil.SOCK.info(LogUtil.SOCK_MARKER, "solong");
+//    }
+  }
 }

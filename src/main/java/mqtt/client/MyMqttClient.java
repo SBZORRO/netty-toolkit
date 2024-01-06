@@ -7,16 +7,17 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import mqtt.core.MqttChannelHandler;
 import mqtt.core.BeanMqttClientConfig;
-import mqtt.core.MqttClientImpl;
 import mqtt.core.IMqttHandler;
+import mqtt.core.MqttChannelHandler;
+import mqtt.core.MqttClientImpl;
 import mqtt.core.MqttPingHandler;
+import tcp.client.TcpClient;
 
 public class MyMqttClient {
   public ChannelFuture future;
@@ -57,9 +58,8 @@ public class MyMqttClient {
     impl.on(topic, handler);
   }
 
-  private class MqttChannelInitializer
-      extends ChannelInitializer<SocketChannel> {
-    protected void initChannel(SocketChannel ch) throws Exception {
+  private class MqttChannelInitializer extends ChannelInitializer<NioSocketChannel> {
+    protected void initChannel(NioSocketChannel ch) throws Exception {
       ch.pipeline().addLast("log4j", new LoggingHandler());
       ch.pipeline().addLast("reconnector", new MqttReconnectHandler());
       ch.pipeline().addLast("mqttDecoder", new MqttDecoder());
@@ -75,8 +75,7 @@ public class MyMqttClient {
     }
   }
 
-  public final LinkedBlockingDeque<Object[]> messageQueue
-      = new LinkedBlockingDeque<>();
+  public final LinkedBlockingDeque<Object[]> messageQueue = new LinkedBlockingDeque<>();
 
   public void subscribe(String topic) {
     impl.on(topic, (t, payload) -> {

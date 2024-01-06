@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
-public class PropertiesUtil {
+public class PropUtil {
 
   public static final ResourceBundle bundle = init();
 
@@ -60,6 +60,10 @@ public class PropertiesUtil {
       = Integer.parseInt(bundle.getString("req_interval"));
   public static final int RETRY_INTERVAL
       = Integer.parseInt(bundle.getString("retry_interval"));
+  public static final int RETRY_MAX = Integer
+      .parseInt(bundle.getString("retry_max"));
+  public static final int REQ_MAX = Integer
+      .parseInt(bundle.getString("req_max"));
 
   public static final int TCP_PORT
       = Integer.parseInt(bundle.getString("tcp_port"));

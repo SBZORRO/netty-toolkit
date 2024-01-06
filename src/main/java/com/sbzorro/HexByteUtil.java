@@ -6,6 +6,19 @@ public class HexByteUtil {
   public static final char[] hexChar = new char[] { '0', '1', '2', '3', '4',
       '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 
+  public static boolean isHex(String msg) {
+    if (msg.length() % 2 != 0) {
+      return false;
+    }
+    for (int i = 0; i < msg.length(); i++) {
+      char c = msg.charAt(i);
+      if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
 //59 45 52 43 20 00 00 00 03 01 00 00 00 00 00 00 39 39 39 39 39 39 39 39 75 00 01 00 00 01 00 00
   public static byte[] cmdToByte(String cmd) {
     byte[] ba = new byte[cmd.length() / 3 + 1];
@@ -130,8 +143,8 @@ public class HexByteUtil {
 
   public static int[] assembleByteLe(byte[] array, int len, int[] size) {
     int[] res = new int[len];
-    for (int i = 0, l = 0, k = 0; i < array.length; i
-        = i + size[k], k++, l++) {
+    for (int i = 0, l = 0, k = 0; i
+        < array.length; i = i + size[k], k++, l++) {
       int p = 0;
       for (int j = size[k] - 1; j >= 0; j--) {
         p |= (array[i + j] & 0xff) << 8 * j;

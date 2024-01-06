@@ -1,9 +1,7 @@
 package mqtt.client;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.TimeUnit;
 
-import com.sbzorro.App;
 import com.sbzorro.LogUtil;
 
 import io.netty.channel.ChannelHandlerContext;
@@ -33,7 +31,7 @@ public final class MqttReconnectHandler extends ChannelInboundHandlerAdapter {
         + ctx.channel().remoteAddress());
 
     final EventLoop loop = ctx.channel().eventLoop();
-    loop.schedule(() -> App.sub("test-zt"), 5, TimeUnit.SECONDS);
+//    loop.schedule(() -> App.sub("test-zt"), 5, TimeUnit.SECONDS);
 
 //    App.sub("test-zt");
   }

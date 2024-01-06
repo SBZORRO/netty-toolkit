@@ -28,7 +28,7 @@ import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
-import mqtt.client.TcpClient;
+import tcp.client.TcpClient;
 
 public class MqttClientImpl {
 
