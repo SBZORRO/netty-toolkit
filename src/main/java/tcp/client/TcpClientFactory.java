@@ -1,8 +1,14 @@
-package com.sbzorro;
+package tcp.client;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
+import com.sbzorro.HexByteUtil;
+import com.sbzorro.LogUtil;
+import com.sbzorro.PropUtil;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -14,14 +20,13 @@ import io.netty.handler.codec.FixedLengthFrameDecoder;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.json.JsonObjectDecoder;
-import tcp.client.TcpClient;
-import tcp.client.TcpConnectionListener;
-import tcp.client.TcpReconnectHandler;
 
 public class TcpClientFactory {
   public static final Map<String, String> last_cmd = new ConcurrentHashMap<>();
   public static final Map<String, String> last_resp = new ConcurrentHashMap<>();
-  public static final Map<String, TcpClient> conn = new ConcurrentHashMap<>();
+
+  public static final ScheduledExecutorService EXE = Executors
+      .newSingleThreadScheduledExecutor();
 
   public static TcpClient connect(String ip, int port)
       throws InterruptedException {
@@ -31,56 +36,44 @@ public class TcpClientFactory {
   public static TcpClient connect(String ip, int port, String dcd, String args)
       throws InterruptedException {
     String host = ip + ":" + port;
-    if (conn.containsKey(host) && conn.get(host).channel().isActive()) {
-      return conn.get(host);
+    TcpClient.CLIENTS.putIfAbsent(host, new TcpClient(ip, port));
+    TcpClient client = TcpClient.CLIENTS.get(host);
+    if (isClientOk(client)) {
+      return client;
     }
-
-    TcpClient client = new TcpClient();
-    client.init(newInitializer(dcd, args));
-    client.listeners(new TcpConnectionListener());
-    client.remoteAddress(ip, port);
-    client.connect().sync();
-
-    conn.put(host, client);
+    synchronized (client) {
+//      TcpClient client = new TcpClient(ip, port);
+      client.init(newInitializer(dcd, args));
+      client.listeners(new TcpConnectionListener());
+      client.remoteAddress(ip, port);
+      client.connect().sync();
+    }
+//    TcpClient.CLIENTS.put(host, client);
     return client;
   }
 
   public static String send(String ip, int port, String msg)
       throws InterruptedException {
-    String host = ip + ":" + port;
-    if (!conn.containsKey(host) || !conn.get(host).channel().isActive()) {
-      return "TO BE CONNECTED";
-    }
-    TcpClient client = conn.get(host);
-
+    TcpClient client = connect(ip, port);
     send0(client.future(), msg);
-
-//    RetransmissionHandler<String> handler = new RetransmissionHandler<>(
-//        (originalMessage) -> {
-//          LogUtil.DEBUG.info("try");
-//          future.channel().writeAndFlush(
-//              Unpooled.copiedBuffer(
-//                  HexByteUtil.cmdToByteNoSep(originalMessage)));
-//        }, msg, EXE, PropUtil.REQ_INTERVAL, PropUtil.REQ_MAX);
-//    handler.start();
-    return "send";
+    return msg;
   }
 
   public static String once(
       String proto, String ip, int port, String msg, String dcd, String args)
       throws InterruptedException {
-    String host = ip + ":" + port;
-    last_cmd.put(host, msg);
+//    String host = ip + ":" + port;
+//    last_cmd.put(host, msg);
 
 //    TcpClient client = connect(ip, port, dcd, args);
-    try (TcpClient client = new TcpClient()) {
+    try (TcpClient client = connect(ip, port, dcd, args)) {
 //      client.init(new MyChannelInitializer());
 //      client.init(new FixedLengthInitializer(len));
-      client.init(newInitializer(dcd, args));
-      client.listeners(new TcpConnectionListener());
-      client.remoteAddress(ip, port);
-      ChannelFuture future = client.connect().sync();
-      future.channel().pipeline().remove("rcnct");
+//      client.init(newInitializer(dcd, args));
+//      client.listeners(new TcpConnectionListener());
+//      client.remoteAddress(ip, port);
+//      ChannelFuture future = client.connect().sync();
+      client.future().channel().pipeline().remove("rcnct");
 //      RetransmissionHandler<String> handler = new RetransmissionHandler<>(
 //          (originalMessage) -> {
 //            LogUtil.DEBUG.info("try");
@@ -91,13 +84,13 @@ public class TcpClientFactory {
 //      handler.start();
 
       send0(client.future(), msg);
-
-      for (int i = 0; i < PropUtil.REQ_MAX; i++) {
-        if (last_resp.containsKey(host)) {
-          return last_resp.remove(host);
-        }
-        Thread.sleep(PropUtil.REQ_INTERVAL);
-      }
+      return waitForIt(ip, port);
+//      for (int i = 0; i < PropUtil.REQ_MAX; i++) {
+//        if (last_resp.containsKey(host)) {
+//          return last_resp.remove(host);
+//        }
+//        Thread.sleep(PropUtil.REQ_INTERVAL);
+//      }
     } catch (InterruptedException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -113,7 +106,9 @@ public class TcpClientFactory {
         .getPort();
 
     String host = ip + ":" + port;
+    last_cmd.put(host, msg);
     LogUtil.SOCK.info(LogUtil.SOCK_MARKER, host + " <<< " + msg);
+
     if (HexByteUtil.isHex(msg)) {
       future.channel().writeAndFlush(
           Unpooled.copiedBuffer(HexByteUtil.cmdToByteNoSep(msg))).sync();
@@ -121,6 +116,43 @@ public class TcpClientFactory {
       future.channel().writeAndFlush(
           Unpooled.copiedBuffer(msg.getBytes())).sync();
     }
+  }
+
+  static void sendRetrans(ChannelFuture future, String msg) {
+    RetransmissionHandler<String> handler = new RetransmissionHandler<>(
+        (originalMessage) -> {
+          try {
+            send0(future, msg);
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+        }, msg, EXE, PropUtil.REQ_INTERVAL, PropUtil.REQ_MAX);
+    handler.start();
+  }
+
+  static String waitForIt(String ip, int port)
+      throws InterruptedException {
+    String host = ip + ":" + port;
+    for (int i = 0; i < PropUtil.REQ_MAX; i++) {
+      if (last_resp.containsKey(host)) {
+        return last_resp.remove(host);
+      }
+      Thread.sleep(PropUtil.REQ_INTERVAL);
+    }
+    return "And Then There Were None";
+  }
+
+  static boolean isClientOk(TcpClient client) {
+    try {
+      return client.future().isSuccess();
+    } catch (Exception e) {
+      return false;
+    }
+//    if (client == null || client.future() == null
+//        || !client.future().isSuccess()) {
+//      return false;
+//    }
+//    return true;
   }
 
   public static ChannelInitializer<NioSocketChannel>

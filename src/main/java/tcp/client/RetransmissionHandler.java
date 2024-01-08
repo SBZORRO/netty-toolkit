@@ -1,16 +1,16 @@
-package com.sbzorro;
+package tcp.client;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-final class RetransmissionHandler<T> {
+public final class RetransmissionHandler<T> {
 
   private ScheduledFuture<?> timer;
   private int interval = 0;
   private int attempt = 1;
-  private int attemptMax = 0;
+  private int attemptMax = 0; // infi
   private Consumer<T> handler;
   private T originalMessage;
   private ScheduledExecutorService exe;
@@ -27,11 +27,11 @@ final class RetransmissionHandler<T> {
 
   public void start() {
     this.timer = exe.scheduleAtFixedRate(() -> {
-      if (attempt++ > attemptMax) {
+      if (attemptMax != 0 && attempt++ > attemptMax) {
         this.stop();
       }
       handler.accept(originalMessage);
-    }, 0, interval, TimeUnit.SECONDS);
+    }, 0, interval, TimeUnit.MILLISECONDS);
   }
 
   void stop() {

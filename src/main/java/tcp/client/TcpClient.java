@@ -19,15 +19,27 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 public class TcpClient implements Closeable {
-  public static final Map<String, TcpClient> map = new ConcurrentHashMap<>();
+  public static final Map<String, TcpClient> CLIENTS = new ConcurrentHashMap<>();
+
+  String ip;
+  int port;
+
+  public TcpClient() {}
+
+  public TcpClient(String host, int port) {
+    this.ip = host;
+    this.port = port;
+    remoteAddress(host, port);
+  }
 
   public ChannelFuture connect(String host, int port) {
+    this.ip = host;
+    this.port = port;
     remoteAddress(host, port);
     return connect();
   }
 
   public ChannelFuture connect() {
-
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(eventLoopGroup());
     bootstrap.channel(channelClass());
@@ -132,6 +144,7 @@ public class TcpClient implements Closeable {
 //      e.printStackTrace();
 //    } finally {
     eventLoopGroup().shutdownGracefully();
+    CLIENTS.remove(ip + ":" + port);
 //    bossGroup.shutdownGracefully();
     LogUtil.SOCK.info(LogUtil.SOCK_MARKER, "solong");
 //    }

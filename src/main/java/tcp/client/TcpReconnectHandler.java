@@ -36,7 +36,7 @@ public final class TcpReconnectHandler extends ChannelInboundHandlerAdapter {
         + ctx.channel().remoteAddress());
 
     final EventLoop loop = ctx.channel().eventLoop();
-    loop.schedule(() -> TcpClient.map.get(host + port).connect(), 5,
+    loop.schedule(() -> TcpClient.CLIENTS.get(host + ":" + port).connect(), 5,
         TimeUnit.SECONDS);
   }
 }

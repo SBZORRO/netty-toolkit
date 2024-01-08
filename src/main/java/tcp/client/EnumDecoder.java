@@ -1,4 +1,4 @@
-package com.sbzorro;
+package tcp.client;
 
 import static io.netty.util.internal.ObjectUtil.checkPositive;
 

@@ -1,12 +1,15 @@
-package com.sbzorro;
+package tcp.client;
 
 import java.net.InetSocketAddress;
+
+import com.sbzorro.HexByteUtil;
+import com.sbzorro.LogUtil;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-public final class StringChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
+public final class RawChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
   public static void main(String[] args) {}
 
@@ -23,8 +26,8 @@ public final class StringChannelHandler extends SimpleChannelInboundHandler<Byte
 
     String host = ip + ":" + port;
     LogUtil.SOCK.info(LogUtil.SOCK_MARKER,
-        host + " >>> " + new String(ba));
-    TcpClientFactory.last_resp.put(host, new String(ba));
+        host + " >>> " + HexByteUtil.byteToHex(ba));
+    TcpClientFactory.last_resp.put(host, HexByteUtil.byteToHex(ba));
 
 //    App.CLIENT.publish("open_exhibition_hall", host + " OK");
 
