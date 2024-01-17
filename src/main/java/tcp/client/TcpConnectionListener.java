@@ -26,7 +26,7 @@ public class TcpConnectionListener implements ChannelFutureListener {
               + channelFuture.channel().remoteAddress());
 
       final EventLoop loop = channelFuture.channel().eventLoop();
-      loop.schedule(() -> TcpClient.CLIENTS.get(host + ":" + port).connect(),
+      loop.schedule(() -> TcpClient.CLIENTS.get(host + ":" + port).bootstrap(),
           5, TimeUnit.SECONDS);
 
 //      RetransmissionHandler<Void> handler = new RetransmissionHandler<>(

@@ -29,7 +29,6 @@ public class MyMqttClient {
 
   public MyMqttClient() {
     this.config = new BeanMqttClientConfig();
-    this.tcpClient = new TcpClient();
     this.impl = new MqttClientImpl(tcpClient, config);
   }
 
@@ -42,9 +41,10 @@ public class MyMqttClient {
   }
 
   public ChannelFuture connect(String host, int port) {
+    this.tcpClient = new TcpClient(host, port);
     tcpClient.init(new MqttChannelInitializer());
     tcpClient.listeners(new MqttConnectionListener());
-    future = tcpClient.connect(host, port);
+    future = tcpClient.bootstrap();
     return future;
   }
 

@@ -27,7 +27,7 @@ public final class RawChannelHandler extends SimpleChannelInboundHandler<ByteBuf
     String host = ip + ":" + port;
     LogUtil.SOCK.info(LogUtil.SOCK_MARKER,
         host + " >>> " + HexByteUtil.byteToHex(ba));
-    TcpClientFactory.last_resp.put(host, HexByteUtil.byteToHex(ba));
+    NettyFactory.LAST_RESP.put(host, HexByteUtil.byteToHex(ba));
 
 //    App.CLIENT.publish("open_exhibition_hall", host + " OK");
 
