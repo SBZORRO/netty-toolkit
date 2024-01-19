@@ -28,9 +28,7 @@ public class UdpClient extends NettyFactory {
         .option(EpollChannelOption.SO_REUSEADDR, true)
         .option(EpollChannelOption.SO_REUSEPORT, true)
         .handler(init());
-//    .handler(new MyInitializer());
-//    future = bootstrap.bind(port).addListener(new UdpConnectionListener());
-    future = bootstrap.bind(12345).addListeners(listeners);
+    future = bootstrap.bind(port).addListeners(listeners);
     return future;
   }
 

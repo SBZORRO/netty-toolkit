@@ -66,7 +66,6 @@ public abstract class NettyFactory implements Closeable {
     } catch (Exception e) {
       future().channel().pipeline().remove(name);
       future().channel().pipeline().addLast(name, handler);
-
     }
   }
 
@@ -220,6 +219,6 @@ public abstract class NettyFactory implements Closeable {
         bossGroup().shutdownGracefully();
       }
     }
-    LogUtil.SOCK.info(LogUtil.SOCK_MARKER, "solong");
+    LogUtil.SOCK.info(LogUtil.SOCK_MARKER, "solong " + host());
   }
 }
