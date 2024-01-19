@@ -13,11 +13,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
-import com.sbzorro.HexByteUtil;
 import com.sbzorro.LogUtil;
 import com.sbzorro.PropUtil;
 
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -26,7 +24,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.DatagramPacket;
 
 public abstract class NettyFactory implements Closeable {
   public static final Map<String, NettyFactory> CLIENTS = new ConcurrentHashMap<>();
@@ -64,38 +61,6 @@ public abstract class NettyFactory implements Closeable {
       client.bootstrap().sync();
     }
     return client;
-  }
-
-  public void sendHexOrStr(String msg)
-      throws InterruptedException {
-    String host = this.host();
-    NettyFactory.LAST_CMD.put(host, msg);
-    LogUtil.SOCK.info(LogUtil.SOCK_MARKER, host + " <<< " + msg);
-
-    if (HexByteUtil.isHex(msg)) {
-      this.writeAndFlush(
-          Unpooled.copiedBuffer(HexByteUtil.cmdToByteNoSep(msg))).sync();
-    } else {
-      this.writeAndFlush(Unpooled.copiedBuffer(msg.getBytes())).sync();
-    }
-  }
-
-  public void sendHexOrStrUdp(String msg)
-      throws InterruptedException {
-    NettyFactory.LAST_CMD.put(this.host(), msg);
-    LogUtil.SOCK.info(LogUtil.SOCK_MARKER, this.host() + " <<< " + msg);
-
-    if (HexByteUtil.isHex(msg)) {
-      this.writeAndFlush(new DatagramPacket(
-          Unpooled.copiedBuffer(HexByteUtil.cmdToByteNoSep(msg)),
-          new InetSocketAddress(this.ip(), this.port())))
-          .sync();
-    } else {
-      this.writeAndFlush(new DatagramPacket(
-          Unpooled.copiedBuffer(msg.getBytes()),
-          new InetSocketAddress(this.ip(), this.port())))
-          .sync();
-    }
   }
 
   public ChannelFuture writeAndFlush(Object message) {

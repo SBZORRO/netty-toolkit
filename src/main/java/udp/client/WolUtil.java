@@ -66,7 +66,7 @@ public class WolUtil {
 
     @Override
     protected void initChannel(NioDatagramChannel ch) throws Exception {
-      ch.pipeline().addLast(new TbdHandler());
+      ch.pipeline().addLast(new RawDatagramHandler());
     }
   }
 
