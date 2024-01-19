@@ -11,6 +11,8 @@ import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.json.JsonObjectDecoder;
 
 public class InitializerFactory {
+  public static final String rcnct = "rcnct";
+
   public static ChannelInitializer<NioSocketChannel>
       newInitializer(String dcd, String args) {
     if (dcd == null) {
@@ -35,8 +37,18 @@ public class InitializerFactory {
       case "enum":
         String[] enums = args.split("_");
         return new EnumInitializer();
+      case "null":
+        return new NullInitializer();
       default:
         return new RawInitializer();
+    }
+  }
+
+  private static class NullInitializer extends ChannelInitializer<NioSocketChannel> {
+    @Override
+    protected void initChannel(NioSocketChannel ch) throws Exception {
+      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
+      ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
     }
   }
 
@@ -44,7 +56,7 @@ public class InitializerFactory {
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
       ch.pipeline().addLast(new RawChannelHandler());
-      ch.pipeline().addLast("rcnct", new TcpReconnectHandler());
+      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
     }
   }
@@ -53,7 +65,7 @@ public class InitializerFactory {
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
       ch.pipeline().addLast(new StringChannelHandler());
-      ch.pipeline().addLast("rcnct", new TcpReconnectHandler());
+      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
     }
   }
@@ -84,7 +96,7 @@ public class InitializerFactory {
               lengthFieldLength, lengthAdjustment, initialBytesToStrip));
 //      .addLast(new LengthFieldBasedFrameDecoder(1024, 4, 1, 0, 0));
       ch.pipeline().addLast(new RawChannelHandler());
-      ch.pipeline().addLast("rcnct", new TcpReconnectHandler());
+      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
     }
   }
@@ -100,7 +112,7 @@ public class InitializerFactory {
     protected void initChannel(NioSocketChannel ch) throws Exception {
       ch.pipeline().addLast(new FixedLengthFrameDecoder(length));
       ch.pipeline().addLast(new RawChannelHandler());
-      ch.pipeline().addLast("rcnct", new TcpReconnectHandler());
+      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
     }
   }
@@ -118,7 +130,7 @@ public class InitializerFactory {
           new DelimiterBasedFrameDecoder(1024, false,
               Unpooled.copiedBuffer(dlmt.getBytes())));
       ch.pipeline().addLast(new RawChannelHandler());
-      ch.pipeline().addLast("rcnct", new TcpReconnectHandler());
+      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
     }
   }
@@ -129,7 +141,7 @@ public class InitializerFactory {
     protected void initChannel(NioSocketChannel ch) throws Exception {
       ch.pipeline().addLast(new LineBasedFrameDecoder(1024));
       ch.pipeline().addLast(new RawChannelHandler());
-      ch.pipeline().addLast("rcnct", new TcpReconnectHandler());
+      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
     }
   }
@@ -140,7 +152,7 @@ public class InitializerFactory {
     protected void initChannel(NioSocketChannel ch) throws Exception {
       ch.pipeline().addLast(new JsonObjectDecoder());
       ch.pipeline().addLast(new RawChannelHandler());
-      ch.pipeline().addLast("rcnct", new TcpReconnectHandler());
+      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
     }
   }
@@ -151,7 +163,7 @@ public class InitializerFactory {
     protected void initChannel(NioSocketChannel ch) throws Exception {
       ch.pipeline().addLast(new EnumDecoder());
       ch.pipeline().addLast(new RawChannelHandler());
-      ch.pipeline().addLast("rcnct", new TcpReconnectHandler());
+      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
     }
   }

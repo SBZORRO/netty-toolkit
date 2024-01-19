@@ -33,15 +33,15 @@ public class TbdHandler extends SimpleChannelInboundHandler<DatagramPacket> {
     NettyFactory.LAST_RESP.put(host, HexByteUtil.byteToHex(ba));
   }
 
-  @Override
-  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-    final EventLoop eventLoop = ctx.channel().eventLoop();
-    eventLoop.schedule(new Runnable() {
-      @Override
-      public void run() {
-//        WolUtil.INSTANCE.bind();
-      }
-    }, 1L, TimeUnit.SECONDS);
-    super.channelInactive(ctx);
-  }
+//  @Override
+//  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+//    final EventLoop eventLoop = ctx.channel().eventLoop();
+//    eventLoop.schedule(new Runnable() {
+//      @Override
+//      public void run() {
+////        WolUtil.INSTANCE.bind();
+//      }
+//    }, 1L, TimeUnit.SECONDS);
+//    super.channelInactive(ctx);
+//  }
 }

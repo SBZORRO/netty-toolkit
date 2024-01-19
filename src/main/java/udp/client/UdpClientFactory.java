@@ -1,6 +1,7 @@
 package udp.client;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.CountDownLatch;
 
 import com.sbzorro.HexByteUtil;
 import com.sbzorro.LogUtil;
@@ -9,6 +10,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import tcp.client.AggregateChannelHandler;
 import tcp.client.NettyFactory;
 
 public class UdpClientFactory {
@@ -18,9 +20,10 @@ public class UdpClientFactory {
     once("172.17.43.172", 5899, "sdfgh", null, null);
   }
 
-  public static NettyFactory bind(int port, String dcd, String args)
-      throws InterruptedException {
-    NettyFactory client = new UdpClient(port);
+  public static NettyFactory
+      bootstrap(String ip, int port, String dcd, String args)
+          throws InterruptedException {
+    NettyFactory client = new UdpClient(ip, port);
     return bootstrap(client, dcd, args);
   }
 
@@ -45,8 +48,25 @@ public class UdpClientFactory {
 
   public static String
       once(String ip, int port, String msg, String dcd, String args) {
-    try (NettyFactory client = bind(port, dcd, args)) {
+    try (NettyFactory client = bootstrap(ip, port, dcd, args)) {
 //      client.future().channel().pipeline().remove("rcnct");
+      send0(client, msg);
+      return client.waitForIt();
+    } catch (InterruptedException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return "And Then There Were None";
+  }
+
+  public static String
+      aggregrate(
+          CountDownLatch obj, String ip, int port, String msg, String dcd,
+          String args)
+          throws InterruptedException {
+    try (NettyFactory client = bootstrap(ip, port, dcd, args)) {
+      client.removeHandler("rcnct");
+      client.addHandler("aggregate", new AggregateChannelHandler(obj));
       send0(client, msg);
       return client.waitForIt();
     } catch (InterruptedException e) {

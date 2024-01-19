@@ -26,10 +26,5 @@ public final class StringChannelHandler extends SimpleChannelInboundHandler<Byte
     String host = ip + ":" + port;
     LogUtil.SOCK.info(LogUtil.SOCK_MARKER, host + " >>> " + new String(ba));
     NettyFactory.LAST_RESP.put(host, new String(ba));
-
-//    App.CLIENT.publish("open_exhibition_hall", host + " OK");
-
-//    App.EXE.execute(
-//        () -> ReadToInflux.writeDevStatus(host, "OK"));
   }
 }

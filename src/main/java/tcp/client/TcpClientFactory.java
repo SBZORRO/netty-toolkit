@@ -1,5 +1,7 @@
 package tcp.client;
 
+import java.util.concurrent.CountDownLatch;
+
 import com.sbzorro.HexByteUtil;
 import com.sbzorro.LogUtil;
 import com.sbzorro.PropUtil;
@@ -15,7 +17,7 @@ public class TcpClientFactory {
   }
 
   public static NettyFactory
-      connect(String ip, int port, String dcd, String args)
+      bootstrap(String ip, int port, String dcd, String args)
           throws InterruptedException {
     NettyFactory client = new TcpClient(ip, port);
     return bootstrap(client, dcd, args);
@@ -39,14 +41,14 @@ public class TcpClientFactory {
     return client;
   }
 
-  public static NettyFactory connect(String ip, int port)
+  public static NettyFactory bootstrap(String ip, int port)
       throws InterruptedException {
-    return connect(ip, port, null, null);
+    return bootstrap(ip, port, null, null);
   }
 
   public static String send(String ip, int port, String msg)
       throws InterruptedException {
-    NettyFactory client = connect(ip, port);
+    NettyFactory client = bootstrap(ip, port);
     send0(client, msg);
     return msg;
   }
@@ -55,8 +57,24 @@ public class TcpClientFactory {
       once(String ip, int port, String msg, String dcd, String args)
           throws InterruptedException {
 
-    try (NettyFactory client = connect(ip, port, dcd, args)) {
+    try (NettyFactory client = bootstrap(ip, port, dcd, args)) {
       client.removeHandler("rcnct");
+      send0(client, msg);
+      return client.waitForIt();
+    } catch (InterruptedException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+    return "And Then There Were None";
+  }
+
+  public static String
+      aggregrate(
+          CountDownLatch obj, String ip, int port, String msg, String dcd, String args)
+          throws InterruptedException {
+    try (NettyFactory client = bootstrap(ip, port, dcd, args)) {
+      client.removeHandler("rcnct");
+      client.addHandler("aggregate", new AggregateChannelHandler(obj));
       send0(client, msg);
       return client.waitForIt();
     } catch (InterruptedException e) {

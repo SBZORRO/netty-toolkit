@@ -60,6 +60,16 @@ public abstract class NettyFactory implements Closeable {
     }
   }
 
+  public void addHandler(String name, ChannelHandler handler) {
+    try {
+      future().channel().pipeline().addLast(name, handler);
+    } catch (Exception e) {
+      future().channel().pipeline().remove(name);
+      future().channel().pipeline().addLast(name, handler);
+
+    }
+  }
+
   protected ChannelFuture future;
 
   public ChannelFuture future() {
@@ -164,7 +174,7 @@ public abstract class NettyFactory implements Closeable {
       throws InterruptedException {
     for (int i = 0; i < PropUtil.REQ_MAX; i++) {
       if (LAST_RESP.containsKey(host())) {
-        return LAST_RESP.remove(host());
+        return LAST_RESP.get(host());
       }
       Thread.sleep(PropUtil.REQ_INTERVAL);
     }
@@ -199,13 +209,16 @@ public abstract class NettyFactory implements Closeable {
   public void close() {
     CLIENTS_WRITE_LOCK.lock();
     if (outSession() > 0) {
+      CLIENTS_WRITE_LOCK.unlock();
       return;
     }
     CLIENTS.remove(host());
     CLIENTS_WRITE_LOCK.unlock();
-    eventLoopGroup().shutdownGracefully();
-    if (bossGroup() != null) {
-      bossGroup().shutdownGracefully();
+    synchronized (this) {
+      eventLoopGroup().shutdownGracefully();
+      if (bossGroup() != null) {
+        bossGroup().shutdownGracefully();
+      }
     }
     LogUtil.SOCK.info(LogUtil.SOCK_MARKER, "solong");
   }
