@@ -70,13 +70,14 @@ public class TcpClientFactory {
 
   public static String
       aggregrate(
-          CountDownLatch obj, String ip, int port, String msg, String dcd, String args)
+          CountDownLatch obj, String ip, int port, String msg, String dcd,
+          String args)
           throws InterruptedException {
     try (NettyFactory client = bootstrap(ip, port, dcd, args)) {
       client.removeHandler("rcnct");
       client.addHandler("aggregate", new AggregateChannelHandler(obj));
       send0(client, msg);
-      return client.waitForIt();
+      return client.waitForIt(false);
     } catch (InterruptedException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();

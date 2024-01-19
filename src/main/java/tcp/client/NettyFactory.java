@@ -169,11 +169,14 @@ public abstract class NettyFactory implements Closeable {
     }
   }
 
-  public String waitForIt()
-      throws InterruptedException {
+  public String waitForIt() throws InterruptedException {
+    return waitForIt(true);
+  }
+
+  public String waitForIt(boolean rm) throws InterruptedException {
     for (int i = 0; i < PropUtil.REQ_MAX; i++) {
       if (LAST_RESP.containsKey(host())) {
-        return LAST_RESP.get(host());
+        return rm ? LAST_RESP.remove(host()) : LAST_RESP.get(host());
       }
       Thread.sleep(PropUtil.REQ_INTERVAL);
     }

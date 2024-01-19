@@ -68,7 +68,7 @@ public class UdpClientFactory {
       client.removeHandler("rcnct");
       client.addHandler("aggregate", new AggregateChannelHandler(obj));
       send0(client, msg);
-      return client.waitForIt();
+      return client.waitForIt(false);
     } catch (InterruptedException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
