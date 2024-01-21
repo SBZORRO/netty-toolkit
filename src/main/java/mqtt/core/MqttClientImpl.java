@@ -1,10 +1,10 @@
 package mqtt.core;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.netty.buffer.ByteBuf;
@@ -41,8 +41,8 @@ public class MqttClientImpl {
 
   private final Set<String> serverSubscribtions = new HashSet<>();
 
-  private final HashMap<String, Set<BeanMqttSubscribtion>> topicToSubscriptions = new HashMap<>();
-  private final HashMap<IMqttHandler, Set<BeanMqttSubscribtion>> handlerToSubscribtion = new HashMap<>();
+  private final Map<String, Set<BeanMqttSubscribtion>> topicToSubscriptions = new ConcurrentHashMap<>();
+  private final Map<IMqttHandler, Set<BeanMqttSubscribtion>> handlerToSubscribtion = new ConcurrentHashMap<>();
 
   private final AtomicInteger nextMessageId = new AtomicInteger(1);
 
@@ -61,7 +61,7 @@ public class MqttClientImpl {
   }
 
   public Future<Void> on(String topic, IMqttHandler handler) {
-    return on(topic, handler, MqttQoS.AT_LEAST_ONCE);
+    return on(topic, handler, MqttQoS.AT_MOST_ONCE);
   }
 
   public Future<Void> on(String topic, IMqttHandler handler, MqttQoS qos) {
@@ -131,7 +131,7 @@ public class MqttClientImpl {
     MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH,
         false, qos, retain, 0);
     MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(
-        topic, qos.value() > 0 ? getNewMessageId().messageId() : 0);
+        topic, qos.value() > 0 ? getNewMessageIdVariableHeader().messageId() : 0);
     MqttPublishMessage message = new MqttPublishMessage(fixedHeader,
         variableHeader, payload);
 
@@ -149,33 +149,19 @@ public class MqttClientImpl {
   // store sub directly, set active = false
   private Future<Void> createSubscribtion(
       String topic, IMqttHandler handler, boolean once, MqttQoS qos) {
-//    if (this.pendingSubscribtions.containsValue(topic)) {
-////    pendingSubscribtions.get(topic).getTimer();
-//      return (Future<Void>) pendingSubscribtions.get(topic).getTimer();
-//    }
-
     // directly set sub
     BeanMqttSubscribtion subscribtion = new BeanMqttSubscribtion(topic,
         handler, once);
-    if (topicToSubscriptions.containsKey(topic)) {
-      topicToSubscriptions.get(topic).add(subscribtion);
-    } else {
-      Set<BeanMqttSubscribtion> li = new HashSet<>();
-      li.add(subscribtion);
-      this.topicToSubscriptions.put(topic, li);
-    }
-    if (handlerToSubscribtion.containsKey(handler)) {
-      handlerToSubscribtion.get(handler).add(subscribtion);
-    } else {
-      Set<BeanMqttSubscribtion> li = new HashSet<>();
-      li.add(subscribtion);
-      this.handlerToSubscribtion.put(handler, li);
-    }
+    this.topicToSubscriptions.putIfAbsent(topic, new HashSet<>());
+    topicToSubscriptions.get(topic).add(subscribtion);
+
+    this.handlerToSubscribtion.putIfAbsent(handler, new HashSet<>());
+    handlerToSubscribtion.get(handler).add(subscribtion);
 
     MqttFixedHeader fixedHeader = new MqttFixedHeader(
-        MqttMessageType.SUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
+        MqttMessageType.SUBSCRIBE, false, qos, false, 0);
     MqttTopicSubscription subscription = new MqttTopicSubscription(topic, qos);
-    MqttMessageIdVariableHeader variableHeader = getNewMessageId();
+    MqttMessageIdVariableHeader variableHeader = getNewMessageIdVariableHeader();
     MqttSubscribePayload payload = new MqttSubscribePayload(
         Collections.singletonList(subscription));
     MqttSubscribeMessage message = new MqttSubscribeMessage(fixedHeader,
@@ -191,7 +177,7 @@ public class MqttClientImpl {
   private ChannelFuture checkSubscribtions(String topic) {
     MqttFixedHeader fixedHeader = new MqttFixedHeader(
         MqttMessageType.UNSUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
-    MqttMessageIdVariableHeader variableHeader = getNewMessageId();
+    MqttMessageIdVariableHeader variableHeader = getNewMessageIdVariableHeader();
     MqttUnsubscribePayload payload = new MqttUnsubscribePayload(
         Collections.singletonList(topic));
     MqttUnsubscribeMessage message = new MqttUnsubscribeMessage(fixedHeader,
@@ -204,7 +190,7 @@ public class MqttClientImpl {
         });
   }
 
-  private MqttMessageIdVariableHeader getNewMessageId() {
+  private MqttMessageIdVariableHeader getNewMessageIdVariableHeader() {
     this.nextMessageId.compareAndSet(0xffff, 1);
     return MqttMessageIdVariableHeader
         .from(this.nextMessageId.getAndIncrement());

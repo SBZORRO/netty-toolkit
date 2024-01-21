@@ -14,13 +14,8 @@ public final class BeanMqttSubscribtion {
 
   private boolean isActive = false;
 
-  public BeanMqttSubscribtion(String topic, IMqttHandler handler, boolean once) {
-    if (topic == null) {
-      throw new NullPointerException("topic");
-    }
-    if (handler == null) {
-      throw new NullPointerException("handler");
-    }
+  public BeanMqttSubscribtion(String topic, IMqttHandler handler,
+      boolean once) {
     this.topic = topic;
     this.handler = handler;
     this.once = once;
