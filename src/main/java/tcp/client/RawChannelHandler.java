@@ -28,6 +28,6 @@ public final class RawChannelHandler extends SimpleChannelInboundHandler<ByteBuf
     String host = ip + ":" + port;
     LogUtil.SOCK.info(LogUtil.SOCK_MARKER,
         host + " >>> " + HexByteUtil.byteToHex(ba));
-    NettyFactory.LAST_RESP.put(host, HexByteUtil.byteToHex(ba));
+    NettyWrapper.LAST_RESP.put(host, HexByteUtil.byteToHex(ba));
   }
 }

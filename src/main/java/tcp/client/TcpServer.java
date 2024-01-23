@@ -1,6 +1,10 @@
 package tcp.client;
 
+import com.sbzorro.HexByteUtil;
+import com.sbzorro.LogUtil;
+
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ServerChannel;
@@ -8,7 +12,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
-public class TcpServer extends NettyFactory {
+public class TcpServer extends NettyWrapper {
 
   public TcpServer() {}
 
@@ -36,5 +40,22 @@ public class TcpServer extends NettyFactory {
 
   public Class<? extends ServerChannel> channelClass() {
     return NioServerSocketChannel.class;
+  }
+
+  @Override
+  public void send(String msg) throws InterruptedException {
+    String host = this.host();
+    NettyWrapper.LAST_CMD.put(host, msg);
+    LogUtil.SOCK.info(LogUtil.SOCK_MARKER, host + " <<< " + msg);
+
+    if (HexByteUtil.isHex(msg)) {
+      this.writeAndFlush(
+          Unpooled.copiedBuffer(HexByteUtil.cmdToByteNoSep(msg))).sync();
+    } else {
+      this.writeAndFlush(Unpooled.copiedBuffer(msg.getBytes())).sync();
+    }
+
+    // TODO Auto-generated method stub
+
   }
 }

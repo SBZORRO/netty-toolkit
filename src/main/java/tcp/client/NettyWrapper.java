@@ -14,19 +14,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import com.sbzorro.LogUtil;
-import com.sbzorro.PropUtil;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 
-public abstract class NettyFactory implements Closeable {
-  public static final Map<String, NettyFactory> CLIENTS = new ConcurrentHashMap<>();
+public abstract class NettyWrapper implements Closeable {
+  public static final Map<String, NettyWrapper> CLIENTS = new ConcurrentHashMap<>();
 
   public static final ReentrantReadWriteLock CLIENTS_LOCK = new ReentrantReadWriteLock();
   public static final WriteLock CLIENTS_WRITE_LOCK = CLIENTS_LOCK.writeLock();
@@ -37,30 +35,19 @@ public abstract class NettyFactory implements Closeable {
   public static final ScheduledExecutorService EXE = Executors
       .newSingleThreadScheduledExecutor();
 
+  public final long startuptime = System.currentTimeMillis();
+
   private AtomicInteger session = new AtomicInteger(0);
 
   public abstract ChannelFuture bootstrap();
 
   public abstract Class<? extends Channel> channelClass();
 
-  public static NettyFactory
-      bootstrap(
-          NettyFactory client, ChannelInitializer<?> init,
-          ChannelFutureListener... listeners)
-          throws InterruptedException {
-    client = client.cacheIn();
-    if (client.isOk()) {
-      return client;
-    }
-    synchronized (client) {
-      if (client.isOk()) {
-        return client;
-      }
-      client.init(init);
-      client.listeners(listeners);
-      client.bootstrap().sync();
-    }
-    return client;
+  public abstract void send(String msg) throws InterruptedException;
+
+  public static void send(NettyWrapper client, String msg)
+      throws InterruptedException {
+    client.send(msg);
   }
 
   public ChannelFuture writeAndFlush(Object message) {
@@ -192,29 +179,26 @@ public abstract class NettyFactory implements Closeable {
     }
   }
 
-  public String waitForIt() throws InterruptedException {
-    return waitForIt(true);
-  }
+//  public String waitForIt(boolean rm, int max, int interval)
+//      throws InterruptedException {
+//    for (int i = 0; i < max; i++) {
+//      if (LAST_RESP.containsKey(host())) {
+//        return rm ? LAST_RESP.remove(host()) : LAST_RESP.get(host());
+//      }
+//      Thread.sleep(interval);
+//    }
+//    return "And Then There Were None";
+//  }
 
-  public String waitForIt(boolean rm) throws InterruptedException {
-    for (int i = 0; i < PropUtil.REQ_MAX; i++) {
-      if (LAST_RESP.containsKey(host())) {
-        return rm ? LAST_RESP.remove(host()) : LAST_RESP.get(host());
-      }
-      Thread.sleep(PropUtil.REQ_INTERVAL);
-    }
-    return "And Then There Were None";
-  }
-
-  void waitForIt(Runnable run, int num, int timeout)
-      throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(num);
-    ChannelHandler handler = new AggregateChannelHandler(latch);
-    addHandler("aggregate", handler);
-    run.run();
-    latch.await(timeout, TimeUnit.MILLISECONDS);
-
-  }
+//  void waitForIt(Runnable run, int num, int timeout)
+//      throws InterruptedException {
+//    CountDownLatch latch = new CountDownLatch(num);
+//    ChannelHandler handler = new CountDownLatchChannelHandler(latch);
+//    addHandler("aggregate", handler);
+//    run.run();
+//    latch.await(timeout, TimeUnit.MILLISECONDS);
+//
+//  }
 
   public int session() {
     return session.get();
@@ -228,9 +212,9 @@ public abstract class NettyFactory implements Closeable {
     return session.decrementAndGet();
   }
 
-  public NettyFactory cacheIn() {
+  public NettyWrapper cacheIn() {
     CLIENTS_WRITE_LOCK.lock();
-    NettyFactory client = CLIENTS.get(host());
+    NettyWrapper client = CLIENTS.get(host());
     if (client == null) {
       client = this;
     }

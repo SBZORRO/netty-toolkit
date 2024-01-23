@@ -10,7 +10,7 @@ import mqtt.core.BeanMqttClientConfig;
 import mqtt.core.MqttChannelHandler;
 import mqtt.core.MqttClientImpl;
 import mqtt.core.MqttPingHandler;
-import tcp.client.NettyFactory;
+import tcp.client.ClientFactory;
 import tcp.client.TcpClient;
 
 public class MqttClientFactory {
@@ -21,7 +21,7 @@ public class MqttClientFactory {
     BeanMqttClientConfig config = new BeanMqttClientConfig();
     MqttClientImpl impl = new MqttClientImpl(tcpClient, config);
 
-    NettyFactory.bootstrap(tcpClient,
+    ClientFactory.bootstrap(tcpClient,
         new MqttChannelInitializer(impl, config.getTimeoutSeconds()),
         new MqttConnectionListener());
     return impl;

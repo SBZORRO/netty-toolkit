@@ -1,13 +1,20 @@
 package udp.client;
 
+import java.net.InetSocketAddress;
+
+import com.sbzorro.HexByteUtil;
+import com.sbzorro.LogUtil;
+
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.epoll.EpollChannelOption;
+import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
-import tcp.client.NettyFactory;
+import tcp.client.NettyWrapper;
 
-public class UdpClient extends NettyFactory {
+public class UdpClient extends NettyWrapper {
 
   public UdpClient() {}
 
@@ -21,6 +28,7 @@ public class UdpClient extends NettyFactory {
     this.ip = "127.0.0.1";
   }
 
+  @Override
   public ChannelFuture bootstrap() {
     Bootstrap bootstrap = new Bootstrap()
         .group(eventLoopGroup())
@@ -28,11 +36,33 @@ public class UdpClient extends NettyFactory {
         .option(EpollChannelOption.SO_REUSEADDR, true)
         .option(EpollChannelOption.SO_REUSEPORT, true)
         .handler(init());
-    future = bootstrap.bind(port).addListeners(listeners);
+    future = bootstrap.bind(port);
+    if (listeners() != null) {
+      future.addListeners(listeners());
+    }
     return future;
   }
 
+  @Override
   public Class<? extends Channel> channelClass() {
     return NioDatagramChannel.class;
+  }
+
+  @Override
+  public void send(String msg) throws InterruptedException {
+    NettyWrapper.LAST_CMD.put(this.host(), msg);
+    LogUtil.SOCK.info(LogUtil.SOCK_MARKER, this.host() + " <<< " + msg);
+
+    if (HexByteUtil.isHex(msg)) {
+      this.writeAndFlush(new DatagramPacket(
+          Unpooled.copiedBuffer(HexByteUtil.cmdToByteNoSep(msg)),
+          new InetSocketAddress(this.ip(), this.port())))
+          .sync();
+    } else {
+      this.writeAndFlush(new DatagramPacket(
+          Unpooled.copiedBuffer(msg.getBytes()),
+          new InetSocketAddress(this.ip(), this.port())))
+          .sync();
+    }
   }
 }

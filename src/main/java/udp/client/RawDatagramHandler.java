@@ -6,7 +6,7 @@ import com.sbzorro.LogUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.DatagramPacket;
-import tcp.client.NettyFactory;
+import tcp.client.NettyWrapper;
 
 /**
  * Hello world!
@@ -27,6 +27,6 @@ public class RawDatagramHandler extends SimpleChannelInboundHandler<DatagramPack
     String host = ip + ":" + port;
     LogUtil.SOCK.info(LogUtil.UDP_MARKER,
         host + " >>> " + HexByteUtil.byteToHex(ba));
-    NettyFactory.LAST_RESP.put(host, HexByteUtil.byteToHex(ba));
+    NettyWrapper.LAST_RESP.put(host, HexByteUtil.byteToHex(ba));
   }
 }

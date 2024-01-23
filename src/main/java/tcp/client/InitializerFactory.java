@@ -3,15 +3,23 @@ package tcp.client;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.socket.nio.NioDatagramChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.handler.codec.FixedLengthFrameDecoder;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.json.JsonObjectDecoder;
+import udp.client.RawDatagramHandler;
 
 public class InitializerFactory {
   public static final String rcnct = "rcnct";
+
+  public static final String reader = "reader";
+  public static final String decoder = "decoder";
+  public static final String out = "out";
+  public static final String logger = "logger";
+  public static final String latch = "latch";
 
   public static ChannelInitializer<NioSocketChannel>
       newInitializer(String dcd, String args) {
@@ -47,26 +55,26 @@ public class InitializerFactory {
   private static class NullInitializer extends ChannelInitializer<NioSocketChannel> {
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
-      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
-      ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
+//      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
+      ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
   }
 
   private static class RawInitializer extends ChannelInitializer<NioSocketChannel> {
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
-      ch.pipeline().addLast(new RawChannelHandler());
-      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
-      ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
+      ch.pipeline().addLast(reader, new RawChannelHandler());
+//      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
+      ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
   }
 
   private static class StringInitializer extends ChannelInitializer<NioSocketChannel> {
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
-      ch.pipeline().addLast(new StringChannelHandler());
-      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
-      ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
+      ch.pipeline().addLast(reader, new StringChannelHandler());
+//      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
+      ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
   }
 
@@ -92,12 +100,13 @@ public class InitializerFactory {
 //          new DelimiterBasedFrameDecoder(1024, false,
 //              Unpooled.copiedBuffer(HexByteUtil.cmdToByte("bb 0d"))));
       ch.pipeline()
-          .addLast(new LengthFieldBasedFrameDecoder(1024, lengthFieldOffset,
-              lengthFieldLength, lengthAdjustment, initialBytesToStrip));
+          .addLast(decoder,
+              new LengthFieldBasedFrameDecoder(1024, lengthFieldOffset,
+                  lengthFieldLength, lengthAdjustment, initialBytesToStrip));
 //      .addLast(new LengthFieldBasedFrameDecoder(1024, 4, 1, 0, 0));
-      ch.pipeline().addLast(new RawChannelHandler());
-      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
-      ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
+      ch.pipeline().addLast(reader, new RawChannelHandler());
+//      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
+      ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
   }
 
@@ -110,10 +119,10 @@ public class InitializerFactory {
 
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
-      ch.pipeline().addLast(new FixedLengthFrameDecoder(length));
-      ch.pipeline().addLast(new RawChannelHandler());
-      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
-      ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
+      ch.pipeline().addLast(decoder, new FixedLengthFrameDecoder(length));
+      ch.pipeline().addLast(reader, new RawChannelHandler());
+//      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
+      ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
   }
 
@@ -126,45 +135,49 @@ public class InitializerFactory {
 
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
-      ch.pipeline().addLast(
+      ch.pipeline().addLast(decoder,
           new DelimiterBasedFrameDecoder(1024, false,
               Unpooled.copiedBuffer(dlmt.getBytes())));
-      ch.pipeline().addLast(new RawChannelHandler());
-      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
-      ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
+      ch.pipeline().addLast(reader, new RawChannelHandler());
+//      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
+      ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
   }
 
   public static class LineBasedInitializer extends ChannelInitializer<NioSocketChannel> {
-
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
-      ch.pipeline().addLast(new LineBasedFrameDecoder(1024));
-      ch.pipeline().addLast(new RawChannelHandler());
-      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
-      ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
+      ch.pipeline().addLast(decoder, new LineBasedFrameDecoder(1024));
+      ch.pipeline().addLast(reader, new RawChannelHandler());
+//      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
+      ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
   }
 
   public static class JsonInitializer extends ChannelInitializer<NioSocketChannel> {
-
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
-      ch.pipeline().addLast(new JsonObjectDecoder());
-      ch.pipeline().addLast(new RawChannelHandler());
-      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
-      ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
+      ch.pipeline().addLast(decoder, new JsonObjectDecoder());
+      ch.pipeline().addLast(reader, new RawChannelHandler());
+//      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
+      ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
   }
 
   public static class EnumInitializer extends ChannelInitializer<NioSocketChannel> {
-
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
-      ch.pipeline().addLast(new EnumDecoder());
-      ch.pipeline().addLast(new RawChannelHandler());
-      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
-      ch.pipeline().addLast(new ChannelOutboundHandlerAdapter());
+      ch.pipeline().addLast(decoder, new EnumDecoder());
+      ch.pipeline().addLast(reader, new RawChannelHandler());
+//      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
+      ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
+    }
+  }
+
+  public static class UdpInitializer extends ChannelInitializer<NioDatagramChannel> {
+    @Override
+    protected void initChannel(NioDatagramChannel ch) throws Exception {
+      ch.pipeline().addLast(reader, new RawDatagramHandler());
     }
   }
 }
