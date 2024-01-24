@@ -9,7 +9,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
-public final class RawChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
+public final class HexChannelHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
   public static void main(String[] args) {}
 
@@ -23,8 +23,7 @@ public final class RawChannelHandler extends SimpleChannelInboundHandler<ByteBuf
         .getHostString();
     int port = ((InetSocketAddress) ctx.channel().remoteAddress())
         .getPort();
-    System.out.println(
-        ((InetSocketAddress) ctx.channel().remoteAddress()).toString());
+
     String host = ip + ":" + port;
     LogUtil.SOCK.info(LogUtil.SOCK_MARKER,
         host + " >>> " + HexByteUtil.byteToHex(ba));

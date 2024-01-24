@@ -5,15 +5,14 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import com.sbzorro.LogUtil;
+import com.sbzorro.PropUtil;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -199,6 +198,17 @@ public abstract class NettyWrapper implements Closeable {
 //    latch.await(timeout, TimeUnit.MILLISECONDS);
 //
 //  }
+  static void sendRetrans(NettyWrapper client, String msg) {
+    RetransmissionHandler<String> handler = new RetransmissionHandler<>(
+        (originalMessage) -> {
+          try {
+            ClientFactory.send(client, msg);
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+        }, msg, NettyWrapper.EXE, PropUtil.REQ_INTERVAL, PropUtil.REQ_MAX);
+    handler.start();
+  }
 
   public int session() {
     return session.get();

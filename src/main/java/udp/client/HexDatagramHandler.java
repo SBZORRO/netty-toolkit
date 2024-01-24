@@ -12,7 +12,7 @@ import tcp.client.NettyWrapper;
  * Hello world!
  *
  */
-public class RawDatagramHandler extends SimpleChannelInboundHandler<DatagramPacket> {
+public class HexDatagramHandler extends SimpleChannelInboundHandler<DatagramPacket> {
 
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, DatagramPacket msg)

@@ -10,7 +10,7 @@ import io.netty.handler.codec.FixedLengthFrameDecoder;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.json.JsonObjectDecoder;
-import udp.client.RawDatagramHandler;
+import udp.client.HexDatagramHandler;
 
 public class InitializerFactory {
   public static final String rcnct = "rcnct";
@@ -63,7 +63,7 @@ public class InitializerFactory {
   private static class RawInitializer extends ChannelInitializer<NioSocketChannel> {
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
-      ch.pipeline().addLast(reader, new RawChannelHandler());
+      ch.pipeline().addLast(reader, new HexChannelHandler());
 //      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
@@ -104,7 +104,7 @@ public class InitializerFactory {
               new LengthFieldBasedFrameDecoder(1024, lengthFieldOffset,
                   lengthFieldLength, lengthAdjustment, initialBytesToStrip));
 //      .addLast(new LengthFieldBasedFrameDecoder(1024, 4, 1, 0, 0));
-      ch.pipeline().addLast(reader, new RawChannelHandler());
+      ch.pipeline().addLast(reader, new HexChannelHandler());
 //      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
@@ -120,7 +120,7 @@ public class InitializerFactory {
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
       ch.pipeline().addLast(decoder, new FixedLengthFrameDecoder(length));
-      ch.pipeline().addLast(reader, new RawChannelHandler());
+      ch.pipeline().addLast(reader, new HexChannelHandler());
 //      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
@@ -138,7 +138,7 @@ public class InitializerFactory {
       ch.pipeline().addLast(decoder,
           new DelimiterBasedFrameDecoder(1024, false,
               Unpooled.copiedBuffer(dlmt.getBytes())));
-      ch.pipeline().addLast(reader, new RawChannelHandler());
+      ch.pipeline().addLast(reader, new HexChannelHandler());
 //      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
@@ -148,7 +148,7 @@ public class InitializerFactory {
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
       ch.pipeline().addLast(decoder, new LineBasedFrameDecoder(1024));
-      ch.pipeline().addLast(reader, new RawChannelHandler());
+      ch.pipeline().addLast(reader, new HexChannelHandler());
 //      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
@@ -158,7 +158,7 @@ public class InitializerFactory {
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
       ch.pipeline().addLast(decoder, new JsonObjectDecoder());
-      ch.pipeline().addLast(reader, new RawChannelHandler());
+      ch.pipeline().addLast(reader, new HexChannelHandler());
 //      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
@@ -168,7 +168,7 @@ public class InitializerFactory {
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
       ch.pipeline().addLast(decoder, new EnumDecoder());
-      ch.pipeline().addLast(reader, new RawChannelHandler());
+      ch.pipeline().addLast(reader, new HexChannelHandler());
 //      ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
     }
@@ -177,7 +177,7 @@ public class InitializerFactory {
   public static class UdpInitializer extends ChannelInitializer<NioDatagramChannel> {
     @Override
     protected void initChannel(NioDatagramChannel ch) throws Exception {
-      ch.pipeline().addLast(reader, new RawDatagramHandler());
+      ch.pipeline().addLast(reader, new HexDatagramHandler());
     }
   }
 }

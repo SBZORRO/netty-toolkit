@@ -26,6 +26,7 @@ public class TcpServer extends NettyWrapper {
     this.port = port;
   }
 
+  @Override
   public ChannelFuture bootstrap() {
     ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.group(bossGroup(), eventLoopGroup());
@@ -38,6 +39,7 @@ public class TcpServer extends NettyWrapper {
     return future;
   }
 
+  @Override
   public Class<? extends ServerChannel> channelClass() {
     return NioServerSocketChannel.class;
   }
@@ -54,8 +56,5 @@ public class TcpServer extends NettyWrapper {
     } else {
       this.writeAndFlush(Unpooled.copiedBuffer(msg.getBytes())).sync();
     }
-
-    // TODO Auto-generated method stub
-
   }
 }
