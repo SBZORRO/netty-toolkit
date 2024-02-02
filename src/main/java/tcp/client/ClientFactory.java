@@ -27,7 +27,7 @@ public abstract class ClientFactory {
     if ("udp".equals(proto)) {
       return bootstrapUdp(ip, port, null, null);
     } else if ("tcp".equals(proto)) {
-      return bootstrapTcp(ip, port, null, null);
+      return bootstrapTcp(ip, port, dcd, args);
     } else if ("ts".equals(proto)) {
       return bind(port, dcd, args);
     }
