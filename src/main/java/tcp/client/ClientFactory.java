@@ -71,14 +71,11 @@ public abstract class ClientFactory {
           String ip, int port, String msg, String dcd, String args,
           int timeout) throws InterruptedException {
 //    try (NettyFactory client = bootstrap(ip, port, dcd, args)) {
-    CountDownLatch latch = new CountDownLatch(1);
-    client.addHandler("latch",
-        new CountDownLatchChannelHandler(latch));
+    CdlHandler cdl = CdlHandler.newInstance(1);
+    client.addHandler("latch", cdl);
     client.send(msg);
-    latch.await(timeout, TimeUnit.MILLISECONDS);
+    boolean to = cdl.getLatch().await(timeout, TimeUnit.MILLISECONDS);
     return NettyWrapper.LAST_RESP.remove(client.host());
-
-//    return client.waitForIt(true, max, interval);
   }
 
   public static String
@@ -87,12 +84,12 @@ public abstract class ClientFactory {
           CountDownLatch latch, String ip, int port, String msg, String dcd,
           String args, int timeout)
           throws InterruptedException {
-    client.addHandler("latch", new CountDownLatchChannelHandler(latch));
+    CdlHandler cdl = CdlHandler.newInstance(latch);
+    client.addHandler("latch", cdl);
+//    client.addHandler("latch", new CdlHandler(latch));
     client.send(msg);
-    latch.await(timeout, TimeUnit.MILLISECONDS);
+//    boolean to = latch.await(timeout, TimeUnit.MILLISECONDS);
     return NettyWrapper.LAST_RESP.get(client.host());
-
-//    return client.waitForIt(false, max, interval);
   }
 
   public static NettyWrapper

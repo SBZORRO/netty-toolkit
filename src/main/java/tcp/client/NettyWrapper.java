@@ -69,13 +69,16 @@ public abstract class NettyWrapper implements Closeable {
     }
   }
 
-  public void addHandler(String name, ChannelHandler handler) {
+  public void removeHandler(ChannelHandler handler) {
     try {
-      future().channel().pipeline().addLast(name, handler);
+      future().channel().pipeline().remove(handler);
     } catch (Exception e) {
-      future().channel().pipeline().remove(name);
-      future().channel().pipeline().addLast(name, handler);
+      // ignore
     }
+  }
+
+  public void addHandler(String name, ChannelHandler handler) {
+    future().channel().pipeline().addLast(name, handler);
   }
 
   protected ChannelFuture future;
@@ -178,26 +181,6 @@ public abstract class NettyWrapper implements Closeable {
     }
   }
 
-//  public String waitForIt(boolean rm, int max, int interval)
-//      throws InterruptedException {
-//    for (int i = 0; i < max; i++) {
-//      if (LAST_RESP.containsKey(host())) {
-//        return rm ? LAST_RESP.remove(host()) : LAST_RESP.get(host());
-//      }
-//      Thread.sleep(interval);
-//    }
-//    return "And Then There Were None";
-//  }
-
-//  void waitForIt(Runnable run, int num, int timeout)
-//      throws InterruptedException {
-//    CountDownLatch latch = new CountDownLatch(num);
-//    ChannelHandler handler = new CountDownLatchChannelHandler(latch);
-//    addHandler("aggregate", handler);
-//    run.run();
-//    latch.await(timeout, TimeUnit.MILLISECONDS);
-//
-//  }
   static void sendRetrans(NettyWrapper client, String msg) {
     RetransmissionHandler<String> handler = new RetransmissionHandler<>(
         (originalMessage) -> {
