@@ -55,6 +55,9 @@ public class PropUtil {
       .getString("influxdb_bucket");
   public static final String INFLUXDB_GAP = bundle.getString("influxdb_gap");
 
+  public static final int TCP_TIMEOUT = Integer
+      .parseInt(bundle.getString("tcp_timeout"));
+  
   public static final int REQ_INTERVAL = Integer
       .parseInt(bundle.getString("req_interval"));
   public static final int RETRY_INTERVAL = Integer

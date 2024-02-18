@@ -31,6 +31,8 @@ public abstract class NettyWrapper implements Closeable {
   public static final Map<String, String> LAST_CMD = new ConcurrentHashMap<>();
   public static final Map<String, String> LAST_RESP = new ConcurrentHashMap<>();
 
+  public static int OPTION_TCP_TIMEOUT = PropUtil.TCP_TIMEOUT;
+
   public static final ScheduledExecutorService EXE = Executors
       .newSingleThreadScheduledExecutor();
 

@@ -69,7 +69,7 @@ public class InitializerFactory {
     }
   }
 
-  private static class StringInitializer extends ChannelInitializer<NioSocketChannel> {
+  public static class StringInitializer extends ChannelInitializer<NioSocketChannel> {
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
       ch.pipeline().addLast(reader, new StringChannelHandler());

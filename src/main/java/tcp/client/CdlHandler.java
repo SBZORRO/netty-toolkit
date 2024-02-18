@@ -1,6 +1,7 @@
 package tcp.client;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import com.sbzorro.LogUtil;
 
@@ -21,7 +22,20 @@ public final class CdlHandler extends ChannelInboundHandlerAdapter {
     if (latch.getCount() == 0 || type == 1) {
       ctx.pipeline().remove(this);
     }
-    LogUtil.DEBUG.info(LogUtil.SOCK_MARKER, latch.getCount());
+    LogUtil.DEBUG.info(LogUtil.SOCK_MARKER,
+        latch.getCount() + " :: Read Complete");
+  }
+
+  public boolean await(NettyWrapper client, long timeout, TimeUnit unit)
+      throws InterruptedException {
+    boolean to = latch.await(timeout, unit);
+    if (latch.getCount() == 0 || type == 1) {
+      remove(client);
+    }
+    if (!to) {
+      LogUtil.DEBUG.info(LogUtil.SOCK_MARKER, latch.getCount() + " :: await");
+    }
+    return to;
   }
 
   public void remove(NettyWrapper client) {

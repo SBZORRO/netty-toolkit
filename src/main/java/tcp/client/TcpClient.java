@@ -7,9 +7,11 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 public class TcpClient extends NettyWrapper {
+
   public TcpClient() {}
 
   public TcpClient(String host, int port) {
@@ -27,6 +29,7 @@ public class TcpClient extends NettyWrapper {
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(eventLoopGroup());
     bootstrap.channel(channelClass());
+    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, OPTION_TCP_TIMEOUT);
     bootstrap.remoteAddress(address());
     bootstrap.handler(init());
     future = bootstrap.connect();

@@ -10,11 +10,6 @@ import udp.client.UdpClient;
 
 public abstract class ClientFactory {
 
-  public static void send(NettyWrapper client, String msg)
-      throws InterruptedException {
-    client.send(msg);
-  }
-
   public static NettyWrapper bootstrap(String proto, String ip, int port)
       throws InterruptedException {
     return bootstrap(proto, ip, port, null, null);
@@ -39,8 +34,8 @@ public abstract class ClientFactory {
           throws InterruptedException {
     NettyWrapper client = new TcpClient(ip, port);
     return ClientFactory.bootstrap(client,
-        InitializerFactory.newInitializer(dcd, args),
-        new TcpConnectionListener());
+        InitializerFactory.newInitializer(dcd, args), null);
+//        new TcpConnectionListener());
   }
 
   public static NettyWrapper bootstrapTcp(String ip, int port)
@@ -61,8 +56,13 @@ public abstract class ClientFactory {
       throws InterruptedException {
     NettyWrapper client = new TcpServer(port);
     return ClientFactory.bootstrap(client,
-        InitializerFactory.newInitializer(dcd, args),
-        new TcpConnectionListener());
+        InitializerFactory.newInitializer(dcd, args), null);
+//        new TcpConnectionListener());
+  }
+
+  public static void send(NettyWrapper client, String msg)
+      throws InterruptedException {
+    client.send(msg);
   }
 
   public static String
@@ -74,7 +74,8 @@ public abstract class ClientFactory {
     CdlHandler cdl = CdlHandler.newInstance(1);
     client.addHandler("latch", cdl);
     client.send(msg);
-    boolean to = cdl.getLatch().await(timeout, TimeUnit.MILLISECONDS);
+//    boolean to = cdl.getLatch().await(timeout, TimeUnit.MILLISECONDS);
+    boolean to = cdl.await(client, timeout, TimeUnit.MILLISECONDS);
     return NettyWrapper.LAST_RESP.remove(client.host());
   }
 
@@ -89,6 +90,7 @@ public abstract class ClientFactory {
 //    client.addHandler("latch", new CdlHandler(latch));
     client.send(msg);
 //    boolean to = latch.await(timeout, TimeUnit.MILLISECONDS);
+    boolean to = cdl.await(client, timeout, TimeUnit.MILLISECONDS);
     return NettyWrapper.LAST_RESP.get(client.host());
   }
 
