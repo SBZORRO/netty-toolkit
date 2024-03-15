@@ -1,5 +1,9 @@
 package modbus;
 
+import java.util.Map;
+
+import com.google.gson.JsonObject;
+
 public class Recv {
 
   public String ip;
@@ -30,9 +34,23 @@ public class Recv {
 
     } else if (funcCode == 0x03) {
       amount = ba[8];
-      data = new byte[amount];
-      System.arraycopy(ba, 9, data, 0, amount);
+      data = new byte[amount & 0xff];
+      System.arraycopy(ba, 9, data, 0, amount & 0xff);
     }
+  }
+
+  public JsonObject pair(Map<Integer, String> map, int width) {
+    JsonObject json = new JsonObject();
+    for (Map.Entry<Integer, String> entry : map.entrySet()) {
+      int reg = entry.getKey();
+      String key = entry.getValue();
+
+      int value = ((data[reg * width] & 0xff) << 8)
+          | (data[reg * width + 1] & 0xff);
+
+      json.addProperty(key, value);
+    }
+    return json;
   }
 
 //  String status() {

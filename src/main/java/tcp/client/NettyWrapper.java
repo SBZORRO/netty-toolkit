@@ -79,8 +79,9 @@ public abstract class NettyWrapper implements Closeable {
     }
   }
 
-  public void addHandler(String name, ChannelHandler handler) {
+  public NettyWrapper addHandler(String name, ChannelHandler handler) {
     future().channel().pipeline().addLast(name, handler);
+    return this;
   }
 
   protected ChannelFuture future;
@@ -99,8 +100,9 @@ public abstract class NettyWrapper implements Closeable {
     return listeners;
   }
 
-  public void addListener(ChannelFutureListener listener) {
+  public NettyWrapper addListener(ChannelFutureListener listener) {
     future().addListener(listener);
+    return this;
   }
 
   protected String ip = "127.0.0.1";

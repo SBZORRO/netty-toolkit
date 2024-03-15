@@ -1,5 +1,7 @@
 package com.sbzorro;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.gson.Gson;
@@ -7,6 +9,7 @@ import com.google.gson.JsonObject;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.mqtt.MqttQoS;
 import mqtt.client.MqttClientFactory;
 import mqtt.core.IMqttHandler;
 import mqtt.core.MqttClientImpl;
@@ -15,10 +18,10 @@ public class App {
 
   public static final Gson GSON = new Gson();
 
-  public static final AtomicInteger i = new AtomicInteger();
+  public static final Map<String, AtomicInteger> map = new HashMap<>();
 
   public static void main(String[] args) throws Exception {
-    MqttClientImpl SUBER = MqttClientFactory.bootstrap("localhost", 1883);
+    MqttClientImpl SUBER = MqttClientFactory.bootstrap("192.168.50.182", 1883);
     IMqttHandler handler = new IMqttHandler() {
       @Override
       public void onMessage(String topic, ByteBuf payload) {
@@ -27,16 +30,19 @@ public class App {
 
         String msg = new String(array);
         LogUtil.MQTT.info(LogUtil.MQTT_MARKER,
-            topic + ": " + i.incrementAndGet());
-
+            topic + ": " + map.get(topic).incrementAndGet());
+        LogUtil.MQTT.info(LogUtil.MQTT_MARKER, map);
         JsonObject json = GSON.fromJson(msg, JsonObject.class);
 
         SUBER.publish("test",
-            Unpooled.copiedBuffer(json.toString().getBytes()));
+            Unpooled.copiedBuffer(json.toString().getBytes()),
+            MqttQoS.EXACTLY_ONCE);
       }
     };
-    for (int i = 0; i < 100; i++) {
-      SUBER.on("test" + i, handler);
+    for (int i = 1; i <= 100; i++) {
+      String topic = "test" + i;
+      map.put(topic, new AtomicInteger());
+      SUBER.on(topic, handler);
     }
 
 //    try {

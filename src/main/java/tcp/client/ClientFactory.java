@@ -96,6 +96,24 @@ public abstract class ClientFactory {
 
   public static NettyWrapper
       bootstrap(
+          NettyWrapper client, ChannelInitializer<?> init)
+          throws InterruptedException {
+    client = client.cacheIn();
+    if (client.isOk()) {
+      return client;
+    }
+    synchronized (client) {
+      if (client.isOk()) {
+        return client;
+      }
+      client.init(init);
+      client.bootstrap();
+    }
+    return client;
+  }
+
+  public static NettyWrapper
+      bootstrap(
           NettyWrapper client, ChannelInitializer<?> init,
           ChannelFutureListener... listeners)
           throws InterruptedException {
@@ -109,7 +127,7 @@ public abstract class ClientFactory {
       }
       client.init(init);
       client.listeners(listeners);
-      client.bootstrap().sync();
+      client.bootstrap();
     }
     return client;
   }
