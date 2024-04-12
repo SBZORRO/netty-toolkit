@@ -21,7 +21,8 @@ public class App {
   public static final Map<String, AtomicInteger> map = new HashMap<>();
 
   public static void main(String[] args) throws Exception {
-    MqttClientImpl SUBER = MqttClientFactory.bootstrap("192.168.50.182", 1883);
+    MqttClientImpl SUBER = MqttClientFactory.bootstrap("192.168.50.182",
+        1883);
     IMqttHandler handler = new IMqttHandler() {
       @Override
       public void onMessage(String topic, ByteBuf payload) {
@@ -34,15 +35,15 @@ public class App {
         LogUtil.MQTT.info(LogUtil.MQTT_MARKER, map);
         JsonObject json = GSON.fromJson(msg, JsonObject.class);
 
-        SUBER.publish("test",
+        SUBER.publish("teset",
             Unpooled.copiedBuffer(json.toString().getBytes()),
-            MqttQoS.EXACTLY_ONCE);
+            MqttQoS.AT_LEAST_ONCE);
       }
     };
     for (int i = 1; i <= 100; i++) {
-      String topic = "test" + i;
+      String topic = "teset" + i;
       map.put(topic, new AtomicInteger());
-      SUBER.on(topic, handler);
+      SUBER.on(topic, handler, MqttQoS.AT_LEAST_ONCE);
     }
 
 //    try {

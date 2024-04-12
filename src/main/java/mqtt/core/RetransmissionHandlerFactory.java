@@ -1,5 +1,6 @@
 package mqtt.core;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
@@ -11,11 +12,27 @@ public final class RetransmissionHandlerFactory {
 
   private RetransmissionHandlerFactory() {}
 
+//  public static <T extends MqttMessage> RetransmissionHandler<T>
+//      test(ChannelFuture obj, final T message) {
+//
+//    RetransmissionHandler<T> publishRetransmissionHandler = new RetransmissionHandler<>();
+//    publishRetransmissionHandler.setOriginalMessage(message);
+//
+//    publishRetransmissionHandler
+//        .setHandle(
+//            (fixedHeader, originalMessage) -> obj.channel().writeAndFlush(
+//                new MqttMessage(fixedHeader,
+//                    originalMessage.variableHeader(),
+//                    ((ByteBuf) message.payload()).retain())));
+//    publishRetransmissionHandler.start(obj.channel().eventLoop());
+//
+//    return publishRetransmissionHandler;
+//  }
+
   public static RetransmissionHandler<MqttPublishMessage> newPublishHandler(
       ChannelFuture obj, final MqttPublishMessage message) {
 
-    RetransmissionHandler<MqttPublishMessage> publishRetransmissionHandler
-        = new RetransmissionHandler<>();
+    RetransmissionHandler<MqttPublishMessage> publishRetransmissionHandler = new RetransmissionHandler<>();
     publishRetransmissionHandler.setOriginalMessage(message);
 
     publishRetransmissionHandler
@@ -31,8 +48,7 @@ public final class RetransmissionHandlerFactory {
 
   public static RetransmissionHandler<MqttMessage> newPubrelHandler(
       ChannelFuture obj, final MqttMessage message) {
-    RetransmissionHandler<MqttMessage> pubrelRetransmissionHandler
-        = new RetransmissionHandler<>();
+    RetransmissionHandler<MqttMessage> pubrelRetransmissionHandler = new RetransmissionHandler<>();
     pubrelRetransmissionHandler.setOriginalMessage(message);
 
     pubrelRetransmissionHandler
@@ -46,18 +62,17 @@ public final class RetransmissionHandlerFactory {
     return pubrelRetransmissionHandler;
   }
 
-  public static RetransmissionHandler<MqttPublishMessage> newQos2IncomingPubHandler(
-      ChannelFuture obj, final MqttPublishMessage message) {
-    RetransmissionHandler<MqttPublishMessage> qos2IncomingPubHandler
-        = new RetransmissionHandler<>();
+  public static RetransmissionHandler<MqttPublishMessage>
+      newQos2IncomingPubHandler(
+          ChannelFuture obj, final MqttPublishMessage message) {
+    RetransmissionHandler<MqttPublishMessage> qos2IncomingPubHandler = new RetransmissionHandler<>();
     qos2IncomingPubHandler.setOriginalMessage(message);
 
     qos2IncomingPubHandler.setHandle(
         (fh, originalMessage) -> {
 
-          MqttMessageIdVariableHeader variableHeader
-              = MqttMessageIdVariableHeader
-                  .from(message.variableHeader().packetId());
+          MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader
+              .from(message.variableHeader().packetId());
 
           obj.channel().writeAndFlush(
               new MqttMessage(fh, variableHeader));
@@ -68,11 +83,11 @@ public final class RetransmissionHandlerFactory {
     return qos2IncomingPubHandler;
   }
 
-  public static RetransmissionHandler<MqttUnsubscribeMessage> newUnsubscribeHandler(
-      ChannelFuture obj, final MqttUnsubscribeMessage message) {
+  public static RetransmissionHandler<MqttUnsubscribeMessage>
+      newUnsubscribeHandler(
+          ChannelFuture obj, final MqttUnsubscribeMessage message) {
 
-    RetransmissionHandler<MqttUnsubscribeMessage> subscribeRetransmissionHandler
-        = new RetransmissionHandler<>();
+    RetransmissionHandler<MqttUnsubscribeMessage> subscribeRetransmissionHandler = new RetransmissionHandler<>();
     subscribeRetransmissionHandler.setOriginalMessage(message);
 
     subscribeRetransmissionHandler
@@ -86,21 +101,16 @@ public final class RetransmissionHandlerFactory {
     return subscribeRetransmissionHandler;
   }
 
-  public static RetransmissionHandler<MqttSubscribeMessage> newSubscribeHandler(
-      ChannelFuture obj, final MqttSubscribeMessage message) {
-
-    RetransmissionHandler<MqttSubscribeMessage> subscribeRetransmissionHandler
-        = new RetransmissionHandler<>();
+  public static RetransmissionHandler<MqttSubscribeMessage>
+      newSubscribeHandler(
+          ChannelFuture obj, final MqttSubscribeMessage message) {
+    RetransmissionHandler<MqttSubscribeMessage> subscribeRetransmissionHandler = new RetransmissionHandler<>();
     subscribeRetransmissionHandler.setOriginalMessage(message);
-
     subscribeRetransmissionHandler
-        .setHandle(
-            (fixedHeader, originalMessage) -> obj.channel().writeAndFlush(
-                new MqttSubscribeMessage(fixedHeader,
-                    originalMessage.variableHeader(),
-                    message.payload())));
+        .setHandle((fixedHeader, originalMessage) -> obj.channel()
+            .writeAndFlush(new MqttSubscribeMessage(fixedHeader,
+                originalMessage.variableHeader(), message.payload())));
     subscribeRetransmissionHandler.start(obj.channel().eventLoop());
-
     return subscribeRetransmissionHandler;
   }
 }

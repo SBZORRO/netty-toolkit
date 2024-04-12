@@ -3,6 +3,10 @@ package tcp.client;
 import java.io.Closeable;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -14,13 +18,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import com.sbzorro.LogUtil;
 import com.sbzorro.PropUtil;
 
+import io.netty.bootstrap.AbstractBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.internal.ObjectUtil;
 
 public abstract class NettyWrapper implements Closeable {
   public static final Map<String, NettyWrapper> CLIENTS = new ConcurrentHashMap<>();
@@ -42,9 +50,37 @@ public abstract class NettyWrapper implements Closeable {
 
   public abstract ChannelFuture bootstrap();
 
-  public abstract Class<? extends Channel> channelClass();
-
   public abstract void send(String msg) throws InterruptedException;
+
+  public static NettyWrapper bootstrap(NettyWrapper client) {
+    client = client.cacheIn();
+    if (client.isOk()) {
+      return client;
+    }
+    synchronized (client) {
+      if (client.isOk()) {
+        return client;
+      }
+      client.bootstrap();
+    }
+    return client;
+  }
+
+  public static NettyWrapper
+      bootstrap(NettyWrapper client, ChannelInitializer<?> init) {
+    client = client.cacheIn();
+    if (client.isOk()) {
+      return client;
+    }
+    synchronized (client) {
+      if (client.isOk()) {
+        return client;
+      }
+      client.init(init);
+      client.bootstrap();
+    }
+    return client;
+  }
 
   public static void send(NettyWrapper client, String msg)
       throws InterruptedException {
@@ -90,18 +126,24 @@ public abstract class NettyWrapper implements Closeable {
     return future;
   }
 
-  protected ChannelFutureListener[] listeners;
+//  protected ChannelFutureListener[] listeners;
+  protected List<ChannelFutureListener> listeners = new ArrayList<ChannelFutureListener>(
+      0);
 
   public void listeners(ChannelFutureListener... listeners) {
-    this.listeners = listeners;
+    this.listeners = Arrays.asList(listeners);
+//    this.listeners = listeners;
   }
 
-  public ChannelFutureListener[] listeners() {
+  public List<ChannelFutureListener> listeners() {
     return listeners;
   }
 
   public NettyWrapper addListener(ChannelFutureListener listener) {
-    future().addListener(listener);
+    this.listeners.add(listener);
+    if (future() != null) {
+      future().addListener(listener);
+    }
     return this;
   }
 
@@ -173,8 +215,34 @@ public abstract class NettyWrapper implements Closeable {
     return init;
   }
 
-  public void init(ChannelHandler init) {
+  public NettyWrapper init(ChannelHandler init) {
     this.init = init;
+    return this;
+  }
+
+  private final Map<ChannelOption<?>, Object> options = new LinkedHashMap<>();
+
+  public Map<ChannelOption<?>, Object> options() {
+    return options;
+  }
+
+  public <B extends AbstractBootstrap<B, C>, C extends Channel> void
+      options(AbstractBootstrap<B, C> b) {
+    for (Map.Entry<ChannelOption<?>, Object> entry : options.entrySet()) {
+      b.option((ChannelOption<Object>) entry.getKey(), entry.getValue());
+    }
+  }
+
+  public <T> NettyWrapper option(ChannelOption<T> option, T value) {
+    ObjectUtil.checkNotNull(option, "option");
+    synchronized (options) {
+      if (value == null) {
+        options.remove(option);
+      } else {
+        options.put(option, value);
+      }
+    }
+    return this;
   }
 
   public boolean isOk() {
@@ -189,7 +257,7 @@ public abstract class NettyWrapper implements Closeable {
     RetransmissionHandler<String> handler = new RetransmissionHandler<>(
         (originalMessage) -> {
           try {
-            ClientFactory.send(client, msg);
+            client.send(msg);
           } catch (InterruptedException e) {
             e.printStackTrace();
           }

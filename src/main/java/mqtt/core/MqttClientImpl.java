@@ -7,6 +7,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.sbzorro.LogUtil;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -131,7 +133,8 @@ public class MqttClientImpl {
     MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH,
         false, qos, retain, 0);
     MqttPublishVariableHeader variableHeader = new MqttPublishVariableHeader(
-        topic, qos.value() > 0 ? getNewMessageIdVariableHeader().messageId() : 0);
+        topic,
+        qos.value() > 0 ? getNewMessageIdVariableHeader().messageId() : 0);
     MqttPublishMessage message = new MqttPublishMessage(fixedHeader,
         variableHeader, payload);
 
@@ -140,6 +143,7 @@ public class MqttClientImpl {
     } else {
       return this.tcpClient.writeAndFlush(message)
           .addListener((ChannelFutureListener) f -> {
+            LogUtil.SOCK.info("pckt: " + message.variableHeader().packetId());
             pendingPublishes.put(message.variableHeader().packetId(),
                 RetransmissionHandlerFactory.newPublishHandler(f, message));
           });
@@ -158,8 +162,9 @@ public class MqttClientImpl {
     this.handlerToSubscribtion.putIfAbsent(handler, new HashSet<>());
     handlerToSubscribtion.get(handler).add(subscribtion);
 
+    // sub qos must be one
     MqttFixedHeader fixedHeader = new MqttFixedHeader(
-        MqttMessageType.SUBSCRIBE, false, qos, false, 0);
+        MqttMessageType.SUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0);
     MqttTopicSubscription subscription = new MqttTopicSubscription(topic, qos);
     MqttMessageIdVariableHeader variableHeader = getNewMessageIdVariableHeader();
     MqttSubscribePayload payload = new MqttSubscribePayload(
@@ -191,9 +196,11 @@ public class MqttClientImpl {
   }
 
   private MqttMessageIdVariableHeader getNewMessageIdVariableHeader() {
-    this.nextMessageId.compareAndSet(0xffff, 1);
-    return MqttMessageIdVariableHeader
-        .from(this.nextMessageId.getAndIncrement());
+    int messageId = this.nextMessageId.getAndIncrement();
+    if (messageId == 0) {
+      messageId = this.nextMessageId.getAndIncrement();
+    }
+    return MqttMessageIdVariableHeader.from(messageId & 0x0000ffff);
   }
 
   public Map<String, Set<BeanMqttSubscribtion>> topicToSubscriptions() {

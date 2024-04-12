@@ -5,8 +5,8 @@ import com.sbzorro.LogUtil;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 public class TcpClient extends NettyWrapper {
@@ -27,21 +27,24 @@ public class TcpClient extends NettyWrapper {
   public ChannelFuture bootstrap() {
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(eventLoopGroup());
-    bootstrap.channel(channelClass());
-//    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, OPTION_TCP_TIMEOUT);
+    bootstrap.channel(NioSocketChannel.class);
+//  bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, OPTION_TCP_TIMEOUT);
+    options(bootstrap);
     bootstrap.remoteAddress(address());
     bootstrap.handler(init());
     future = bootstrap.connect();
     if (listeners() != null) {
-      future.addListeners(listeners());
+      ChannelFutureListener[] arr = listeners()
+          .toArray(new ChannelFutureListener[0]);
+      future.addListeners(arr);
     }
     return future;
   }
 
-  @Override
-  public Class<? extends Channel> channelClass() {
-    return NioSocketChannel.class;
-  }
+//  @Override
+//  public Class<? extends Channel> channelClass() {
+//    return NioSocketChannel.class;
+//  }
 
   @Override
   public void send(String msg) throws InterruptedException {

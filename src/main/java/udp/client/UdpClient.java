@@ -7,8 +7,8 @@ import com.sbzorro.LogUtil;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
@@ -32,20 +32,17 @@ public class UdpClient extends NettyWrapper {
   public ChannelFuture bootstrap() {
     Bootstrap bootstrap = new Bootstrap()
         .group(eventLoopGroup())
-        .channel(channelClass())
+        .channel(NioDatagramChannel.class)
         .option(EpollChannelOption.SO_REUSEADDR, true)
         .option(EpollChannelOption.SO_REUSEPORT, true)
         .handler(init());
     future = bootstrap.bind(port);
     if (listeners() != null) {
-      future.addListeners(listeners());
+      ChannelFutureListener[] arr = listeners()
+          .toArray(new ChannelFutureListener[0]);
+      future.addListeners(arr);
     }
     return future;
-  }
-
-  @Override
-  public Class<? extends Channel> channelClass() {
-    return NioDatagramChannel.class;
   }
 
   @Override

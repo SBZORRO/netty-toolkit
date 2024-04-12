@@ -5,9 +5,9 @@ import java.util.concurrent.TimeUnit;
 
 import com.sbzorro.LogUtil;
 
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelHandler.Sharable;
 
 @Sharable
 public final class CdlHandler extends ChannelInboundHandlerAdapter {

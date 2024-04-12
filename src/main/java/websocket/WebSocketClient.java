@@ -15,6 +15,10 @@
  */
 package websocket;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URI;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -37,10 +41,6 @@ import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketCl
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URI;
 
 /**
  * This is an example of a WebSocket client.

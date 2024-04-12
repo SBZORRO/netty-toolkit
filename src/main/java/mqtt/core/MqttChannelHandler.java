@@ -26,8 +26,7 @@ import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.util.concurrent.DefaultPromise;
 
-public final class MqttChannelHandler
-    extends SimpleChannelInboundHandler<MqttMessage> {
+public final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMessage> {
 
   private final MqttClientImpl impl;
 
@@ -38,33 +37,38 @@ public final class MqttChannelHandler
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, MqttMessage msg)
       throws Exception {
-    switch (msg.fixedHeader().messageType()) {
-      case CONNACK:
-        handleConack(ctx.channel(), (MqttConnAckMessage) msg);
-        break;
-      case SUBACK:
-        handleSubAck((MqttSubAckMessage) msg);
-        break;
-      case PUBLISH:
-        handlePublish(ctx.channel(), (MqttPublishMessage) msg);
-        break;
-      case UNSUBACK:
-        handleUnsuback((MqttUnsubAckMessage) msg);
-        break;
-      case PUBACK:
-        handlePuback((MqttPubAckMessage) msg);
-        break;
-      case PUBREC:
-        handlePubrec(ctx.channel(), msg);
-        break;
-      case PUBREL:
-        handlePubrel(ctx.channel(), msg);
-        break;
-      case PUBCOMP:
-        handlePubcomp(msg);
-        break;
-      default:
-        break;
+    try {
+      switch (msg.fixedHeader().messageType()) {
+        case CONNACK:
+          handleConack(ctx.channel(), (MqttConnAckMessage) msg);
+          break;
+        case SUBACK:
+          handleSubAck((MqttSubAckMessage) msg);
+          break;
+        case PUBLISH:
+          handlePublish(ctx.channel(), (MqttPublishMessage) msg);
+          break;
+        case UNSUBACK:
+          handleUnsuback((MqttUnsubAckMessage) msg);
+          break;
+        case PUBACK:
+          handlePuback((MqttPubAckMessage) msg);
+          break;
+        case PUBREC:
+          handlePubrec(ctx.channel(), msg);
+          break;
+        case PUBREL:
+          handlePubrel(ctx.channel(), msg);
+          break;
+        case PUBCOMP:
+          handlePubcomp(msg);
+          break;
+        default:
+          break;
+      }
+    } catch (Exception e) {
+
+      e.printStackTrace();
     }
   }
 
@@ -81,6 +85,18 @@ public final class MqttChannelHandler
             impl.mqttConnectPayload()))
         .addListener((ChannelFutureListener) f -> impl
             .connectFuture(new DefaultPromise<>(f.channel().eventLoop())));
+  }
+
+  @Override
+  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    System.out.println("channelInactive");
+  }
+
+  @Override
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+      throws Exception {
+    System.out.println("exceptionCaught");
+    cause.printStackTrace();
   }
 
   private void invokeHandlersForIncomingPublish(MqttPublishMessage message) {
@@ -142,9 +158,9 @@ public final class MqttChannelHandler
   }
 
   private void handleSubAck(MqttSubAckMessage message) {
-    RetransmissionHandler<MqttSubscribeMessage> pendingSubscribtions
-        = this.impl.pendingSubscribtions()
-            .get(message.variableHeader().messageId());
+    RetransmissionHandler<MqttSubscribeMessage> pendingSubscribtions = this.impl
+        .pendingSubscribtions()
+        .get(message.variableHeader().messageId());
 
     this.impl.pendingSubscribtions()
         .remove(message.variableHeader().messageId());
@@ -168,9 +184,8 @@ public final class MqttChannelHandler
         if (message.variableHeader().packetId() != -1) {
           MqttFixedHeader fixedHeader = new MqttFixedHeader(
               MqttMessageType.PUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
-          MqttMessageIdVariableHeader variableHeader
-              = MqttMessageIdVariableHeader
-                  .from(message.variableHeader().packetId());
+          MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader
+              .from(message.variableHeader().packetId());
           channel.writeAndFlush(
               new MqttPubAckMessage(fixedHeader, variableHeader));
         }
@@ -181,11 +196,10 @@ public final class MqttChannelHandler
 
           MqttFixedHeader fixedHeader = new MqttFixedHeader(
               MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0);
-          MqttMessageIdVariableHeader variableHeader
-              = MqttMessageIdVariableHeader
-                  .from(message.variableHeader().packetId());
-          MqttMessage pubrecMessage
-              = new MqttMessage(fixedHeader, variableHeader);
+          MqttMessageIdVariableHeader variableHeader = MqttMessageIdVariableHeader
+              .from(message.variableHeader().packetId());
+          MqttMessage pubrecMessage = new MqttMessage(fixedHeader,
+              variableHeader);
 
           message.payload().retain();
 
@@ -193,7 +207,8 @@ public final class MqttChannelHandler
               .addListener((ChannelFutureListener) f -> {
                 this.impl.pendingQos2IncomingPublishes().put(
                     message.variableHeader().packetId(),
-                    RetransmissionHandlerFactory.newQos2IncomingPubHandler(f, message));
+                    RetransmissionHandlerFactory.newQos2IncomingPubHandler(f,
+                        message));
               });
         }
         break;
@@ -203,9 +218,9 @@ public final class MqttChannelHandler
   }
 
   private void handleUnsuback(MqttUnsubAckMessage message) {
-    RetransmissionHandler<MqttUnsubscribeMessage> pendingServerUnsubscribes
-        = this.impl.pendingServerUnsubscribes()
-            .get(message.variableHeader().messageId());
+    RetransmissionHandler<MqttUnsubscribeMessage> pendingServerUnsubscribes = this.impl
+        .pendingServerUnsubscribes()
+        .get(message.variableHeader().messageId());
 
     this.impl.pendingServerUnsubscribes()
         .remove(message.variableHeader().messageId());
@@ -226,8 +241,8 @@ public final class MqttChannelHandler
 
     MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL,
         false, MqttQoS.AT_LEAST_ONCE, false, 0);
-    MqttMessageIdVariableHeader variableHeader
-        = (MqttMessageIdVariableHeader) message.variableHeader();
+    MqttMessageIdVariableHeader variableHeader = (MqttMessageIdVariableHeader) message
+        .variableHeader();
     MqttMessage pubrelMessage = new MqttMessage(fixedHeader, variableHeader);
     channel.writeAndFlush(pubrelMessage)
         .addListener(
@@ -244,10 +259,10 @@ public final class MqttChannelHandler
     if (this.impl.pendingQos2IncomingPublishes()
         .containsKey(((MqttMessageIdVariableHeader) message.variableHeader())
             .messageId())) {
-      RetransmissionHandler<MqttPublishMessage> incomingQos2Publish
-          = this.impl.pendingQos2IncomingPublishes()
-              .get(((MqttMessageIdVariableHeader) message.variableHeader())
-                  .messageId());
+      RetransmissionHandler<MqttPublishMessage> incomingQos2Publish = this.impl
+          .pendingQos2IncomingPublishes()
+          .get(((MqttMessageIdVariableHeader) message.variableHeader())
+              .messageId());
       this.invokeHandlersForIncomingPublish(
           incomingQos2Publish.getOriginalMessage());
       incomingQos2Publish.stop();
@@ -264,8 +279,8 @@ public final class MqttChannelHandler
 
   // qos 2 part 3
   private void handlePubcomp(MqttMessage message) {
-    MqttMessageIdVariableHeader variableHeader
-        = (MqttMessageIdVariableHeader) message.variableHeader();
+    MqttMessageIdVariableHeader variableHeader = (MqttMessageIdVariableHeader) message
+        .variableHeader();
     this.impl.getPendingPublishes().remove(variableHeader.messageId()).stop();
   }
 }

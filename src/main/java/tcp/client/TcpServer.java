@@ -6,8 +6,8 @@ import com.sbzorro.LogUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.ServerChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
@@ -30,19 +30,24 @@ public class TcpServer extends NettyWrapper {
   public ChannelFuture bootstrap() {
     ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.group(bossGroup(), eventLoopGroup());
-    bootstrap.channel(channelClass());
+    bootstrap.channel(NioServerSocketChannel.class);
     bootstrap.option(ChannelOption.SO_BACKLOG, 100);
     bootstrap.handler(new LoggingHandler(LogLevel.INFO));
     bootstrap.childHandler(init());
 
-    future = bootstrap.bind(ip, port).addListeners(listeners);
+    future = bootstrap.bind(ip, port);
+    if (listeners() != null) {
+      ChannelFutureListener[] arr = listeners()
+          .toArray(new ChannelFutureListener[0]);
+      future.addListeners(arr);
+    }
     return future;
   }
 
-  @Override
-  public Class<? extends ServerChannel> channelClass() {
-    return NioServerSocketChannel.class;
-  }
+//  @Override
+//  public Class<? extends ServerChannel> channelClass() {
+//    return NioServerSocketChannel.class;
+//  }
 
   @Override
   public void send(String msg) throws InterruptedException {
