@@ -7,6 +7,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 public class TcpClient extends NettyWrapper {
@@ -29,6 +30,7 @@ public class TcpClient extends NettyWrapper {
     bootstrap.group(eventLoopGroup());
     bootstrap.channel(NioSocketChannel.class);
 //  bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, OPTION_TCP_TIMEOUT);
+    bootstrap.option(ChannelOption.SO_RCVBUF, 1024_000_000);
     options(bootstrap);
     bootstrap.remoteAddress(address());
     bootstrap.handler(init());

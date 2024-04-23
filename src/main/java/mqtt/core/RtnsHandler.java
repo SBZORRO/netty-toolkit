@@ -10,7 +10,7 @@ import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.concurrent.ScheduledFuture;
 
-final class RetransmissionHandler<T extends MqttMessage> {
+final class RtnsHandler<T extends MqttMessage> {
   private ScheduledFuture<?> timer;
   private int timeout = 1;
   private BiConsumer<MqttFixedHeader, T> handler;

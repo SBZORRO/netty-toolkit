@@ -188,7 +188,7 @@ public abstract class NettyWrapper implements Closeable {
 
   public EventLoopGroup eventLoopGroup() {
     if (this.eventLoopGroup == null) {
-      this.eventLoopGroup = new NioEventLoopGroup(1);
+      this.eventLoopGroup = new NioEventLoopGroup(10);
     }
     return eventLoopGroup;
   }

@@ -39,7 +39,7 @@ public class MqttClientFactory {
     protected void initChannel(NioSocketChannel ch) throws Exception {
       ch.pipeline().addLast("log4j", new LoggingHandler());
       ch.pipeline().addLast("reconnector", new MqttReconnectHandler());
-      ch.pipeline().addLast("mqttDecoder", new MqttDecoder());
+      ch.pipeline().addLast("mqttDecoder", new MqttDecoder(1024_000));
       ch.pipeline().addLast("mqttEncoder", MqttEncoder.INSTANCE);
       ch.pipeline().addLast("idleStateHandler",
           new IdleStateHandler(timeout, timeout, 0));
