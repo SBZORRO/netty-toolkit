@@ -1,19 +1,15 @@
 package mqtt.core;
 
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 
 import io.netty.channel.EventLoop;
-import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageType;
-import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.concurrent.ScheduledFuture;
 
 final class RtnsHandler<T extends MqttMessage> {
   private ScheduledFuture<?> timer;
-  private int timeout = 1;
-  private BiConsumer<MqttFixedHeader, T> handler;
+  private int timeout = 2;
+  private Runnable handler;
   private T originalMessage;
 
   void start(EventLoop eventLoop) {
@@ -27,22 +23,8 @@ final class RtnsHandler<T extends MqttMessage> {
   }
 
   private void startTimer(EventLoop eventLoop) {
-    this.timer = eventLoop.scheduleWithFixedDelay(() -> {
-
-      boolean isDup = this.originalMessage.fixedHeader().isDup();
-      if (this.originalMessage.fixedHeader().messageType()
-          == MqttMessageType.PUBLISH
-          && this.originalMessage.fixedHeader().qosLevel()
-              != MqttQoS.AT_MOST_ONCE) {
-        isDup = true;
-      }
-      MqttFixedHeader fixedHeader = new MqttFixedHeader(
-          this.originalMessage.fixedHeader().messageType(), isDup,
-          this.originalMessage.fixedHeader().qosLevel(),
-          this.originalMessage.fixedHeader().isRetain(),
-          this.originalMessage.fixedHeader().remainingLength());
-      handler.accept(fixedHeader, originalMessage);
-    }, timeout, timeout << 2, TimeUnit.SECONDS);
+    this.timer = eventLoop.scheduleWithFixedDelay(handler, timeout,
+        timeout << 1, TimeUnit.SECONDS);
   }
 
   void stop() {
@@ -51,8 +33,8 @@ final class RtnsHandler<T extends MqttMessage> {
     }
   }
 
-  void setHandle(BiConsumer<MqttFixedHeader, T> runnable) {
-    this.handler = runnable;
+  void setHandle(Runnable handler) {
+    this.handler = handler;
   }
 
   void setOriginalMessage(T originalMessage) {

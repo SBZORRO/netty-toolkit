@@ -2,10 +2,8 @@ package mqtt.core;
 
 import java.util.Random;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.mqtt.MqttVersion;
 
 public final class BeanMqttClientConfig {
@@ -18,7 +16,6 @@ public final class BeanMqttClientConfig {
   private String password = null;
   private boolean cleanSession = false;
   private BeanMqttLastWill lastWill;
-  private Class<? extends Channel> channelClass = NioSocketChannel.class;
 
   ChannelInitializer<SocketChannel> init;
 
@@ -98,13 +95,5 @@ public final class BeanMqttClientConfig {
 
   public void setLastWill(BeanMqttLastWill lastWill) {
     this.lastWill = lastWill;
-  }
-
-  public Class<? extends Channel> getChannelClass() {
-    return channelClass;
-  }
-
-  public void setChannelClass(Class<? extends Channel> channelClass) {
-    this.channelClass = channelClass;
   }
 }

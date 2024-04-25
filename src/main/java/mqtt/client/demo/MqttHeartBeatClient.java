@@ -1,4 +1,4 @@
-package mqtt.client;
+package mqtt.client.demo;
 
 
 import java.util.concurrent.TimeUnit;

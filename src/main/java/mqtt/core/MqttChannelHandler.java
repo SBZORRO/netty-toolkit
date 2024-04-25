@@ -235,13 +235,12 @@ public final class MqttChannelHandler extends SimpleChannelInboundHandler<MqttMe
         .variableHeader();
     MqttMessage pubrelMessage = new MqttMessage(fixedHeader, variableHeader);
     return channel.writeAndFlush(pubrelMessage)
-        .addListener(
-            (ChannelFutureListener) f -> {
-              this.impl.pendingPubreles().put(
-                  ((MqttMessageIdVariableHeader) message.variableHeader())
-                      .messageId(),
-                  RetransmissionHandlerFactory.newPubrelHandler(f, message));
-            });
+        .addListener((ChannelFutureListener) f -> {
+          this.impl.pendingPubreles().put(
+              ((MqttMessageIdVariableHeader) message.variableHeader())
+                  .messageId(),
+              RetransmissionHandlerFactory.newPubrelHandler(f, message));
+        });
   }
 
   private ChannelFuture sendPubcomp(Channel channel, MqttMessage message) {

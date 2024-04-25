@@ -5,6 +5,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.ssl.SslContext;
+import mqtt.client.demo.ClientHandler;
 
 public class NettyConnectIssue {
   private static final boolean SSL = true;

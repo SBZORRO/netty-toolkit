@@ -1,6 +1,7 @@
 package mqtt.core;
 
 import io.netty.channel.ChannelFuture;
+import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
@@ -16,13 +17,15 @@ public final class RetransmissionHandlerFactory {
     RtnsHandler<MqttPublishMessage> pubRtnsHandler = new RtnsHandler<>();
     pubRtnsHandler.setOriginalMessage(message);
 
-    pubRtnsHandler.setHandle(
-        (fixedHeader, originalMessage) -> {
-          obj.channel().writeAndFlush(
-              new MqttPublishMessage(fixedHeader,
-                  originalMessage.variableHeader(),
-                  message.payload().retain()));
-        });
+    pubRtnsHandler.setHandle(() -> obj.channel().writeAndFlush(
+        new MqttPublishMessage(
+            new MqttFixedHeader(
+                message.fixedHeader().messageType(), true,
+                message.fixedHeader().qosLevel(),
+                message.fixedHeader().isRetain(),
+                message.fixedHeader().remainingLength()),
+            message.variableHeader(),
+            message.payload().retain())));
     pubRtnsHandler.start(obj.channel().eventLoop());
 
     return pubRtnsHandler;
@@ -32,9 +35,7 @@ public final class RetransmissionHandlerFactory {
       ChannelFuture obj, final MqttMessage message) {
     RtnsHandler<MqttMessage> pubrelRtnsHandler = new RtnsHandler<>();
     pubrelRtnsHandler.setOriginalMessage(message);
-    pubrelRtnsHandler.setHandle(
-        (fixedHeader, originalMessage) -> obj.channel().writeAndFlush(
-            new MqttMessage(fixedHeader, originalMessage.variableHeader())));
+    pubrelRtnsHandler.setHandle(() -> obj.channel().writeAndFlush(message));
     pubrelRtnsHandler.start(obj.channel().eventLoop());
     return pubrelRtnsHandler;
   }
@@ -55,17 +56,10 @@ public final class RetransmissionHandlerFactory {
 
   public static RtnsHandler<MqttUnsubscribeMessage> newUnsubscribeHandler(
       ChannelFuture obj, final MqttUnsubscribeMessage message) {
-
     RtnsHandler<MqttUnsubscribeMessage> subRtnsHandler = new RtnsHandler<>();
     subRtnsHandler.setOriginalMessage(message);
-
-    subRtnsHandler.setHandle(
-        (fixedHeader, originalMessage) -> obj.channel().writeAndFlush(
-            new MqttUnsubscribeMessage(fixedHeader,
-                originalMessage.variableHeader(),
-                message.payload())));
+    subRtnsHandler.setHandle(() -> obj.channel().writeAndFlush(message));
     subRtnsHandler.start(obj.channel().eventLoop());
-
     return subRtnsHandler;
   }
 
@@ -73,9 +67,7 @@ public final class RetransmissionHandlerFactory {
       ChannelFuture obj, final MqttSubscribeMessage message) {
     RtnsHandler<MqttSubscribeMessage> subRtnsHandler = new RtnsHandler<>();
     subRtnsHandler.setOriginalMessage(message);
-    subRtnsHandler.setHandle((fixedHeader, originalMessage) -> obj.channel()
-        .writeAndFlush(new MqttSubscribeMessage(fixedHeader,
-            originalMessage.variableHeader(), message.payload())));
+    subRtnsHandler.setHandle(() -> obj.channel().writeAndFlush(message));
     subRtnsHandler.start(obj.channel().eventLoop());
     return subRtnsHandler;
   }

@@ -1,4 +1,4 @@
-package mqtt.client;
+package mqtt.client.demo;
 
 
 import io.netty.channel.ChannelHandlerContext;
