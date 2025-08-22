@@ -66,8 +66,8 @@ public abstract class NettyWrapper implements Closeable {
     return client;
   }
 
-  public static NettyWrapper
-      bootstrap(NettyWrapper client, ChannelInitializer<?> init) {
+  public static NettyWrapper bootstrap(NettyWrapper client,
+      ChannelInitializer<?> init) {
     client = client.cacheIn();
     if (client.isOk()) {
       return client;
@@ -126,25 +126,22 @@ public abstract class NettyWrapper implements Closeable {
     return future;
   }
 
-//  protected ChannelFutureListener[] listeners;
-  protected List<ChannelFutureListener> listeners = new ArrayList<ChannelFutureListener>(
-      0);
+  protected ChannelFutureListener[] listeners;
 
-  public void listeners(ChannelFutureListener... listeners) {
-    this.listeners = Arrays.asList(listeners);
-//    this.listeners = listeners;
-  }
-
-  public List<ChannelFutureListener> listeners() {
-    return listeners;
-  }
-
-  public NettyWrapper addListener(ChannelFutureListener listener) {
-    this.listeners.add(listener);
-    if (future() != null) {
-      future().addListener(listener);
-    }
+  public NettyWrapper listeners(ChannelFutureListener... listeners) {
+    this.listeners = listeners;
     return this;
+  }
+
+  public void addListeners(ChannelFutureListener... listeners) {
+    assert future != null;
+    future.addListeners(listeners);
+  }
+
+  public void listen() {
+    if (listeners != null) {
+      future.addListeners(listeners);
+    }
   }
 
   protected String ip = "127.0.0.1";
@@ -176,32 +173,40 @@ public abstract class NettyWrapper implements Closeable {
     return address;
   }
 
-  private EventLoopGroup eventLoopGroup;
   private EventLoopGroup bossGroup;
+  private EventLoopGroup workerGroup;
 
-  public EventLoopGroup bossGroup() {
+  public EventLoopGroup singleGroup() {
     if (this.bossGroup == null) {
       this.bossGroup = new NioEventLoopGroup(1);
     }
     return bossGroup;
   }
 
-  public EventLoopGroup eventLoopGroup() {
-    if (this.eventLoopGroup == null) {
-      this.eventLoopGroup = new NioEventLoopGroup(10);
-    }
-    return eventLoopGroup;
+  public EventLoopGroup bossGroup() {
+    return bossGroup;
   }
 
-  public EventLoopGroup eventLoopGroup(int i) {
-    if (this.eventLoopGroup == null) {
-      this.eventLoopGroup = new NioEventLoopGroup(i);
-    }
-    return eventLoopGroup;
+  public EventLoopGroup workerGroup() {
+    return workerGroup;
   }
 
-  public void eventLoopGroup(EventLoopGroup eventLoopGroup) {
-    this.eventLoopGroup = eventLoopGroup;
+  public EventLoopGroup bossGroup(int i) {
+    if (this.bossGroup == null) {
+      this.bossGroup = new NioEventLoopGroup(i);
+    }
+    return bossGroup;
+  }
+
+  public EventLoopGroup workerGroup(int i) {
+    if (this.workerGroup == null) {
+      this.workerGroup = new NioEventLoopGroup(i);
+    }
+    return workerGroup;
+  }
+
+  public void eventLoopGroup(EventLoopGroup workerGroup) {
+    this.workerGroup = workerGroup;
   }
 
   public void bossGroup(EventLoopGroup bossGroup) {
@@ -226,8 +231,8 @@ public abstract class NettyWrapper implements Closeable {
     return options;
   }
 
-  public <B extends AbstractBootstrap<B, C>, C extends Channel> void
-      options(AbstractBootstrap<B, C> b) {
+  public <B extends AbstractBootstrap<B, C>, C extends Channel> void options(
+      AbstractBootstrap<B, C> b) {
     for (Map.Entry<ChannelOption<?>, Object> entry : options.entrySet()) {
       b.option((ChannelOption<Object>) entry.getKey(), entry.getValue());
     }
@@ -299,7 +304,7 @@ public abstract class NettyWrapper implements Closeable {
     CLIENTS.remove(host());
     CLIENTS_WRITE_LOCK.unlock();
     synchronized (this) {
-      eventLoopGroup().shutdownGracefully();
+      workerGroup().shutdownGracefully();
       if (bossGroup() != null) {
         bossGroup().shutdownGracefully();
       }

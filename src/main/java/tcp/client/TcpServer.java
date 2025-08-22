@@ -29,18 +29,15 @@ public class TcpServer extends NettyWrapper {
   @Override
   public ChannelFuture bootstrap() {
     ServerBootstrap bootstrap = new ServerBootstrap();
-    bootstrap.group(bossGroup(), eventLoopGroup());
+    bootstrap.group(singleGroup(), singleGroup());
     bootstrap.channel(NioServerSocketChannel.class);
     bootstrap.option(ChannelOption.SO_BACKLOG, 100);
     bootstrap.handler(new LoggingHandler(LogLevel.INFO));
     bootstrap.childHandler(init());
 
     future = bootstrap.bind(ip, port);
-    if (listeners() != null) {
-      ChannelFutureListener[] arr = listeners()
-          .toArray(new ChannelFutureListener[0]);
-      future.addListeners(arr);
-    }
+    listen();
+
     return future;
   }
 

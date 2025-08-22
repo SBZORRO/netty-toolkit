@@ -23,7 +23,7 @@ public class MqttClientFactory {
 
     NettyWrapper.bootstrap(tcpClient,
         new MqttChannelInitializer(impl, config.getTimeoutSeconds()))
-        .addListener(new MqttConnectionListener());
+        .listeners(new MqttConnectionListener());
     return impl;
   }
 

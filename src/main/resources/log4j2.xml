@@ -2,7 +2,8 @@
 <Configuration monitorInterval="300" strict="true" name="dt"
   packages="com.jerei">
   <Properties>
-    <property name="LOG_HOME">${sys:log4j.home}dt</property>
+    <property name="LOG_HOME">dt</property>
+    <!-- <property name="LOG_HOME">${sys:log4j.home}dt</property> -->
     <property name="FILE_NAME">log</property>
   </Properties>
 

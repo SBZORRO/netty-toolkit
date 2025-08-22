@@ -31,17 +31,15 @@ public class UdpClient extends NettyWrapper {
   @Override
   public ChannelFuture bootstrap() {
     Bootstrap bootstrap = new Bootstrap()
-        .group(eventLoopGroup())
+        .group(singleGroup())
         .channel(NioDatagramChannel.class)
         .option(EpollChannelOption.SO_REUSEADDR, true)
         .option(EpollChannelOption.SO_REUSEPORT, true)
         .handler(init());
     future = bootstrap.bind(port);
-    if (listeners() != null) {
-      ChannelFutureListener[] arr = listeners()
-          .toArray(new ChannelFutureListener[0]);
-      future.addListeners(arr);
-    }
+
+    listen();
+
     return future;
   }
 

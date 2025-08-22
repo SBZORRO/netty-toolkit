@@ -27,19 +27,17 @@ public class TcpClient extends NettyWrapper {
   @Override
   public ChannelFuture bootstrap() {
     Bootstrap bootstrap = new Bootstrap();
-    bootstrap.group(eventLoopGroup());
+    bootstrap.group(singleGroup());
     bootstrap.channel(NioSocketChannel.class);
 //  bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, OPTION_TCP_TIMEOUT);
-    bootstrap.option(ChannelOption.SO_RCVBUF, 1024_000_000);
+//    bootstrap.option(ChannelOption.SO_RCVBUF, 1024_000_000);
     options(bootstrap);
     bootstrap.remoteAddress(address());
     bootstrap.handler(init());
     future = bootstrap.connect();
-    if (listeners() != null) {
-      ChannelFutureListener[] arr = listeners()
-          .toArray(new ChannelFutureListener[0]);
-      future.addListeners(arr);
-    }
+
+    listen();
+
     return future;
   }
 

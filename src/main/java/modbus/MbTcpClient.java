@@ -13,7 +13,7 @@ public class MbTcpClient {
   public static TcpClient connect(String ip, int port, ITcpReader reader)
       throws InterruptedException {
     NettyWrapper client = new TcpClient(ip, port)
-        .addListener(new TcpConnectionListener())
+        .listeners(new TcpConnectionListener())
         .init(new MyReaderInitializer(reader));
     return (TcpClient) NettyWrapper.bootstrap(client);
   }

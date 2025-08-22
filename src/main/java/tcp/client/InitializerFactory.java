@@ -209,9 +209,10 @@ public class InitializerFactory {
 
     @Override
     protected void initChannel(NioSocketChannel ch) throws Exception {
-      ch.pipeline()
-          .addLast(decoder,
-              new LengthFieldBasedFrameDecoder(1024, 8, 1, 0, 0));
+//      ch.pipeline()
+//          .addLast(decoder,
+//              new LengthFieldBasedFrameDecoder(1024, 8, 1, 0, 0));
+//      ch.pipeline().addLast(decoder, new JsonObjectDecoder());
       ch.pipeline().addLast(reader, new TcpChannelHandler(r));
       ch.pipeline().addLast(rcnct, new TcpReconnectHandler());
       ch.pipeline().addLast(out, new ChannelOutboundHandlerAdapter());
