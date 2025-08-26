@@ -49,6 +49,7 @@ public abstract class NettyWrapper implements Closeable {
   private AtomicInteger session = new AtomicInteger(0);
 
   public abstract ChannelFuture bootstrap();
+  public abstract AbstractBootstrap<?, ?> initBootstrap();
 
   public abstract void send(String msg) throws InterruptedException;
 

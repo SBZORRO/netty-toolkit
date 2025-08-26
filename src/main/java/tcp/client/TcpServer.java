@@ -6,13 +6,14 @@ import com.sbzorro.LogUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
 public class TcpServer extends NettyWrapper {
+
+  ServerBootstrap bootstrap;
 
   public TcpServer() {}
 
@@ -28,17 +29,21 @@ public class TcpServer extends NettyWrapper {
 
   @Override
   public ChannelFuture bootstrap() {
+    future = this.bootstrap.bind(ip, port);
+    listen();
+    return future;
+  }
+
+  @Override
+  public ServerBootstrap initBootstrap() {
     ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.group(singleGroup(), singleGroup());
     bootstrap.channel(NioServerSocketChannel.class);
     bootstrap.option(ChannelOption.SO_BACKLOG, 100);
     bootstrap.handler(new LoggingHandler(LogLevel.INFO));
     bootstrap.childHandler(init());
-
-    future = bootstrap.bind(ip, port);
-    listen();
-
-    return future;
+    this.bootstrap = bootstrap;
+    return bootstrap;
   }
 
 //  @Override

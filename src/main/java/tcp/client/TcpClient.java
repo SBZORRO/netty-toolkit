@@ -3,6 +3,7 @@ package tcp.client;
 import com.sbzorro.HexByteUtil;
 import com.sbzorro.LogUtil;
 
+import io.netty.bootstrap.AbstractBootstrap;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -11,6 +12,8 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 public class TcpClient extends NettyWrapper {
+
+  Bootstrap bootstrap = new Bootstrap();
 
   public TcpClient() {}
 
@@ -26,6 +29,13 @@ public class TcpClient extends NettyWrapper {
 
   @Override
   public ChannelFuture bootstrap() {
+    future = this.bootstrap.connect();
+    listen();
+    return future;
+  }
+
+  @Override
+  public Bootstrap initBootstrap() {
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(singleGroup());
     bootstrap.channel(NioSocketChannel.class);
@@ -34,11 +44,8 @@ public class TcpClient extends NettyWrapper {
     options(bootstrap);
     bootstrap.remoteAddress(address());
     bootstrap.handler(init());
-    future = bootstrap.connect();
-
-    listen();
-
-    return future;
+    this.bootstrap = bootstrap;
+    return bootstrap;
   }
 
 //  @Override
